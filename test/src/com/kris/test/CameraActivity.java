@@ -1,6 +1,7 @@
 package com.kris.test;
 
 import com.kris.test.camera.CameraPreview;
+import com.kris.test.camera.SimpleAndroidOCRActivity;
 
 import android.os.Bundle;
 import android.view.Gravity;
@@ -26,7 +27,7 @@ public class CameraActivity extends Activity {
 	@Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        ((TextView) findViewById(R.id.button_capture)).setText("New text");
+        ((TextView) findViewById(R.id.button_capture)).setText("Open SimpleOCR");
         
         if(checkCameraHardware(this)){
         	postToast("The hardware is available");
@@ -43,6 +44,16 @@ public class CameraActivity extends Activity {
 
     }
 	
+    /** Processes the default button pressed method. By default it assumes it is an unknown buttons. */
+	public void onBtnClick(View view) {
+		int id = view.getId();
+		if(id == R.id.button_capture){
+			// start the activity
+	        Intent newIntent = new Intent(this, SimpleAndroidOCRActivity.class);
+			startActivity(newIntent);
+		}
+	}
+
 	/** Launch a toast message. */
 	protected void postToast(String text){
 
