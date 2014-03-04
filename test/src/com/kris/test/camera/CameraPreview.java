@@ -4,13 +4,9 @@ import java.io.IOException;
 
 import android.content.Context;
 import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
 import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.WindowManager;
 
 /** A basic Camera preview class */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {

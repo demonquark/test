@@ -4,6 +4,7 @@ import com.kris.test.camera.CameraPreview;
 import com.kris.test.camera.SimpleAndroidOCRActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -22,26 +23,14 @@ public class CameraActivity extends Activity {
 	protected Toast toastMsg;
     private Camera mCamera;
     private CameraPreview mPreview;
+    
+    private String TAG = "CameraActivity";
 
-	
-	@Override public void onCreate(Bundle savedInstanceState) {
+    @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
         ((TextView) findViewById(R.id.button_capture)).setText("Open SimpleOCR");
         
-        if(checkCameraHardware(this)){
-        	postToast("The hardware is available");
-        	mCamera = CameraActivity.getCameraInstance();
-
-            // Create our Preview view and set it as the content of our activity.
-            mPreview = new CameraPreview(this, mCamera);
-            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-            preview.addView(mPreview);
-
-        } else {
-        	postToast("The hardware is NOT available");
-        }
-
     }
 	
     /** Processes the default button pressed method. By default it assumes it is an unknown buttons. */
@@ -101,13 +90,29 @@ public class CameraActivity extends Activity {
         releaseCamera();              // release the camera immediately on pause event
     }
 
+    protected void onResume() {  
+    	super.onResume(); 
+
+        if(mCamera == null && checkCameraHardware(this)){
+        	postToast("The hardware is available");
+        	mCamera = CameraActivity.getCameraInstance();
+
+            // Create our Preview view and set it as the content of our activity.
+            mPreview = new CameraPreview(this, mCamera);
+            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+            preview.addView(mPreview);
+        } else {
+        	postToast("The hardware is NOT available");
+        }
+    }
+    
     private void releaseCamera(){
         if (mCamera != null){
+            mCamera.setPreviewCallback(null);
+            mPreview.getHolder().removeCallback(mPreview);        	
             mCamera.release();        // release the camera for other applications
             mCamera = null;
         }
     }
-
-	
 
 }
