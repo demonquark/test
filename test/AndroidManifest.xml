@@ -66,6 +66,12 @@
             android:label="@string/title_activity_main" >
         </activity>
         
-    </application>
+        <activity
+            android:name="com.kris.test.camera.SimpleAndroidOCRActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:label="@string/title_activity_main" >
+        </activity>
+        
+	</application>
 
 </manifest>
