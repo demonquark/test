@@ -13,6 +13,7 @@ com.kris.test.camera uses tesseract
 
 1.	Download and build the tess-two project from https://github.com/rmtheis/tess-two
 2.	Build the tess-two project using the instructions from https://github.com/rmtheis/tess-two
+
 ...Quick reminder of those instructions:
 
 ```
