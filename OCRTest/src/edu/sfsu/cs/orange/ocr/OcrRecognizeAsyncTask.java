@@ -15,7 +15,10 @@
  */
 package edu.sfsu.cs.orange.ocr;
 
+import java.util.List;
+
 import com.googlecode.leptonica.android.ReadFile;
+import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import android.graphics.Bitmap;
@@ -23,6 +26,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.util.Pair;
 
 /**
  * Class to send OCR requests to the OCR engine in a separate thread, send a success/failure message,
@@ -74,7 +78,37 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
     try {     
       baseApi.setImage(ReadFile.readBitmap(bitmap));
+      
+      // TODO: REMOVE Kris
+      
+      // step 1: Set the save blob choices to true. This saves the alternatives
+      baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
       textResult = baseApi.getUTF8Text();
+      
+      // step 2: Get the result iterator
+      ResultIterator r = baseApi.getResultIterator();
+      int level = com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
+      String allResultText = "";
+      int i = 0;
+      
+      r.begin();
+      do { 
+    	  
+    	  // step 3: Get the top choice for this item in the iterator
+		  List<Pair <String, Double>> otherResults = r.getChoicesAndConfidence(level);
+    	  for (Pair <String, Double> element : otherResults) {
+    		  allResultText += element.first + " (" + element.second  + "%) ";
+    	  }
+    	  
+    	  // step 4: New line to indicate a new word
+    	  allResultText += "\n----------------------------------\n"; 
+    	  
+      } while(r.next(level) && i < 100);
+
+      textResult = allResultText;
+      
+      // end REMOVE
+      
       timeRequired = System.currentTimeMillis() - start;
 
       // Check for failure to recognize text

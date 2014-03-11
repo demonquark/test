@@ -754,7 +754,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     ocrResultTextView.setText(ocrResult.getText());
     // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
     int scaledSize = Math.max(22, 32 - ocrResult.getText().length() / 4);
-    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
+//    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
+    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);    
 
     TextView translationLanguageLabelTextView = (TextView) findViewById(R.id.translation_language_label_text_view);
     TextView translationLanguageTextView = (TextView) findViewById(R.id.translation_language_text_view);
