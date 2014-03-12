@@ -6,6 +6,7 @@ import com.kris.test.camera.SimpleAndroidOCRActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Surface;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -14,6 +15,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.hardware.Camera;
 
 public class CameraActivity extends Activity {
@@ -58,6 +60,12 @@ public class CameraActivity extends Activity {
 		toastMsg.show();
 	}
 	
+	@Override public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    	Log.d(TAG, "on configuration changed: " + getWindowManager().getDefaultDisplay().getRotation());
+        mPreview.setSurfaceRotation(getWindowManager().getDefaultDisplay().getRotation());
+
+	}
 	
 	/** Check if this device has a camera */
 	private boolean checkCameraHardware(Context context) {
@@ -114,5 +122,4 @@ public class CameraActivity extends Activity {
             mCamera = null;
         }
     }
-
 }

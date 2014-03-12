@@ -5,6 +5,7 @@ import java.io.IOException;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -12,6 +13,7 @@ import android.view.SurfaceView;
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private int mRotation;
     
     private String TAG = "CameraPreview";
 
@@ -27,6 +29,22 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
+    public void setSurfaceRotation(int rotation){
+    	int degrees = 0;
+        switch (mRotation) {
+			case Surface.ROTATION_0: degrees = 0; mRotation = rotation; break;
+			case Surface.ROTATION_90: degrees = 90; mRotation = rotation; break;
+			case Surface.ROTATION_180: degrees = 180; mRotation = rotation; break;
+			case Surface.ROTATION_270: degrees = 270; mRotation = rotation; break;
+    	}
+        mCamera.setDisplayOrientation(degrees);
+    	Log.d(TAG, "set surface rotation: " + mRotation);
+    }
+    
+    public int getSurfaceRotation(){
+    	return mRotation; 
+    }
+    
     public void surfaceCreated(SurfaceHolder holder) {
         // The Surface has been created, now tell the camera where to draw the preview.
         try {
@@ -66,7 +84,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.startPreview();
 
         } catch (Exception e){
-            Log.d(TAG, "Error starting camera preview: " + e.getMessage());
+            Log.e(TAG, "Error starting camera preview: " + e.getMessage());
         }
     }
 }

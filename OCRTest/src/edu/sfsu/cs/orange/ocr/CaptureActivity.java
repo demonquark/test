@@ -29,9 +29,11 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -51,6 +53,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -372,7 +375,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       resumeOCR();
     }
   }
-  
+
   /** 
    * Method to start or restart recognition after the OCR engine has been initialized,
    * or after the app regains focus. Sets state related settings and OCR engine parameters,
@@ -576,6 +579,16 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+	  // get the orientation
+	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
+	  int degrees = 0;
+	  switch (rotation) {
+		  case Surface.ROTATION_0: degrees = 0; break;
+		  case Surface.ROTATION_90: degrees = 90; break;
+		  case Surface.ROTATION_180: degrees = 180; break;
+		  case Surface.ROTATION_270: degrees = 270; break;
+	  }
+	  Log.d(TAG, "Configuration has changed: " + degrees);
   }
 
   /** Sets the necessary language code values for the given OCR language. */
@@ -740,18 +753,44 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     ImageView bitmapImageView = (ImageView) findViewById(R.id.image_view);
     lastBitmap = ocrResult.getBitmap();
-    if (lastBitmap == null) {
-      bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
-          R.drawable.ic_launcher));
-    } else {
-      bitmapImageView.setImageBitmap(lastBitmap);
-    }
+    Bitmap newBitmap = rotateImage(lastBitmap);
+    
+    if (newBitmap == null) {
+        bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
+            R.drawable.ic_launcher));
+      } else {
+        bitmapImageView.setImageBitmap(newBitmap);
+      }
 
+//    if (lastBitmap == null) {
+//      bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
+//          R.drawable.ic_launcher));
+//    } else {
+//      bitmapImageView.setImageBitmap(lastBitmap);
+//    }
+
+	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
+	  int degrees = 0;
+	    switch (rotation) {
+	    case Surface.ROTATION_0:
+	        degrees = 0;
+	        break;
+	    case Surface.ROTATION_90:
+	        degrees = 90;
+	        break;
+	    case Surface.ROTATION_180:
+	        degrees = 180;
+	        break;
+	    case Surface.ROTATION_270:
+	        degrees = 270;
+	        break;
+	    }
+    
     // Display the recognized text
     TextView sourceLanguageTextView = (TextView) findViewById(R.id.source_language_text_view);
     sourceLanguageTextView.setText(sourceLanguageReadable);
     TextView ocrResultTextView = (TextView) findViewById(R.id.ocr_result_text_view);
-    ocrResultTextView.setText(ocrResult.getText());
+    ocrResultTextView.setText(ocrResult.getText() + "[" + degrees + "]");
     // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
     int scaledSize = Math.max(22, 32 - ocrResult.getText().length() / 4);
 //    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
@@ -783,6 +822,35 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       setProgressBarVisibility(false);
     }
     return true;
+  }
+  
+  
+  public Bitmap rotateImage(Bitmap src) {
+	  
+	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
+	  int degrees = 0;
+	    switch (rotation) {
+	    case Surface.ROTATION_0:
+	        degrees = 0;
+	        break;
+	    case Surface.ROTATION_90:
+	        degrees = 0;
+	        break;
+	    case Surface.ROTATION_180:
+	        degrees = 0;
+	        break;
+	    case Surface.ROTATION_270:
+	        degrees = 0;
+	        break;
+	    }
+	  
+	  // create new matrix
+	  Matrix matrix = new Matrix();
+	  
+	  // setup rotation degree
+	  matrix.postRotate(degrees);
+	  Bitmap bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+	  return bmp;
   }
   
   /**
@@ -1001,6 +1069,24 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       onShutterButtonPressContinuous();
     } else {
       if (handler != null) {
+    	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
+    	  int degrees = 0;
+    	    switch (rotation) {
+    	    case Surface.ROTATION_0:
+    	        degrees = 0;
+    	        break;
+    	    case Surface.ROTATION_90:
+    	        degrees = 90;
+    	        break;
+    	    case Surface.ROTATION_180:
+    	        degrees = 180;
+    	        break;
+    	    case Surface.ROTATION_270:
+    	        degrees = 270;
+    	        break;
+    	    }
+        Log.i("CaptureActivity", "Degrees is " + degrees);
+    	  
         handler.shutterButtonClick();
       }
     }
