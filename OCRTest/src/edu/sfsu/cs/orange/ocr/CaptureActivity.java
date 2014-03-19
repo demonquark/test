@@ -29,13 +29,12 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -53,6 +52,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -120,7 +120,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   /** Whether the light should be initially activated by default. */
   public static final boolean DEFAULT_TOGGLE_LIGHT = false;
 
-  
   /** Flag to display the real-time recognition results at the top of the scanning screen. */
   private static final boolean CONTINUOUS_DISPLAY_RECOGNIZED_TEXT = true;
   
@@ -200,6 +199,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private boolean isEngineReady;
   private boolean isPaused;
   private static boolean isFirstLaunch; // True if this is the first time the app is being run
+  
+  public CameraOrientationListener mOrientationEventListener;
 
   Handler getHandler() {
     return handler;
@@ -231,6 +232,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     cameraButtonView = findViewById(R.id.camera_button_view);
     resultView = findViewById(R.id.result_view);
     
+    // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    
     statusViewBottom = (TextView) findViewById(R.id.status_view_bottom);
     registerForContextMenu(statusViewBottom);
     statusViewTop = (TextView) findViewById(R.id.status_view_top);
@@ -246,7 +249,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       shutterButton = (ShutterButton) findViewById(R.id.shutter_button);
       shutterButton.setOnShutterButtonListener(this);
     }
-   
+    
     ocrResultView = (TextView) findViewById(R.id.ocr_result_text_view);
     registerForContextMenu(ocrResultView);
     translationView = (TextView) findViewById(R.id.translation_text_view);
@@ -346,6 +349,10 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     super.onResume();   
     resetStatusView();
     
+    // REMOVE KRIS: Reset the orientation listener
+    resumeOrientationDetection();
+    //END REMOVE KRIS
+    
     String previousSourceLanguageCodeOcr = sourceLanguageCodeOcr;
     int previousOcrEngineMode = ocrEngineMode;
     
@@ -404,6 +411,18 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       // surfaceCreated() won't be called, so init the camera here.
       initCamera(surfaceHolder);
     }
+  }
+  
+  /** Method creates a new orientation event listener and starts orientation detection. */
+  void resumeOrientationDetection() {
+	  
+	  // create a new event listener if there is none
+	  if(mOrientationEventListener == null) {
+	    mOrientationEventListener = new CameraOrientationListener(this, SensorManager.SENSOR_DELAY_NORMAL);
+	  }
+	  
+	  // enable orientation detection
+	  if (mOrientationEventListener.canDetectOrientation()){ mOrientationEventListener.enable(); }
   }
   
   /** Called when the shutter button is pressed in continuous mode. */
@@ -475,6 +494,15 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   
   @Override
   protected void onPause() {
+
+    //REMOVE KRIS
+	  Log.v("CaptureActivity", "onPause destroy the orientationEventListener");
+	  if(mOrientationEventListener != null){
+		  mOrientationEventListener.disable();
+		  mOrientationEventListener = null;
+	  } 
+	//END REMOVE KRIS
+
     if (handler != null) {
       handler.quitSynchronously();
     }
@@ -578,18 +606,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     hasSurface = false;
   }
 
-  public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-	  // get the orientation
-	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
-	  int degrees = 0;
-	  switch (rotation) {
-		  case Surface.ROTATION_0: degrees = 0; break;
-		  case Surface.ROTATION_90: degrees = 90; break;
-		  case Surface.ROTATION_180: degrees = 180; break;
-		  case Surface.ROTATION_270: degrees = 270; break;
-	  }
-	  Log.d(TAG, "Configuration has changed: " + degrees);
-  }
+  public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) { }
 
   /** Sets the necessary language code values for the given OCR language. */
   private boolean setSourceLanguage(String languageCode) {
@@ -753,21 +770,13 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     ImageView bitmapImageView = (ImageView) findViewById(R.id.image_view);
     lastBitmap = ocrResult.getBitmap();
-    Bitmap newBitmap = rotateImage(lastBitmap);
-    
-    if (newBitmap == null) {
-        bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
-            R.drawable.ic_launcher));
-      } else {
-        bitmapImageView.setImageBitmap(newBitmap);
-      }
 
-//    if (lastBitmap == null) {
-//      bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
-//          R.drawable.ic_launcher));
-//    } else {
-//      bitmapImageView.setImageBitmap(lastBitmap);
-//    }
+    if (lastBitmap == null) {
+      bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(getResources(),
+          R.drawable.ic_launcher));
+    } else {
+      bitmapImageView.setImageBitmap(lastBitmap);
+    }
 
 	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
 	  int degrees = 0;
@@ -793,7 +802,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     ocrResultTextView.setText(ocrResult.getText() + "[" + degrees + "]");
     // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
     int scaledSize = Math.max(22, 32 - ocrResult.getText().length() / 4);
-//    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
+    // ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
     ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);    
 
     TextView translationLanguageLabelTextView = (TextView) findViewById(R.id.translation_language_label_text_view);
@@ -822,35 +831,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       setProgressBarVisibility(false);
     }
     return true;
-  }
-  
-  
-  public Bitmap rotateImage(Bitmap src) {
-	  
-	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
-	  int degrees = 0;
-	    switch (rotation) {
-	    case Surface.ROTATION_0:
-	        degrees = 0;
-	        break;
-	    case Surface.ROTATION_90:
-	        degrees = 0;
-	        break;
-	    case Surface.ROTATION_180:
-	        degrees = 0;
-	        break;
-	    case Surface.ROTATION_270:
-	        degrees = 0;
-	        break;
-	    }
-	  
-	  // create new matrix
-	  Matrix matrix = new Matrix();
-	  
-	  // setup rotation degree
-	  matrix.postRotate(degrees);
-	  Bitmap bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
-	  return bmp;
   }
   
   /**
@@ -1069,24 +1049,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       onShutterButtonPressContinuous();
     } else {
       if (handler != null) {
-    	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
-    	  int degrees = 0;
-    	    switch (rotation) {
-    	    case Surface.ROTATION_0:
-    	        degrees = 0;
-    	        break;
-    	    case Surface.ROTATION_90:
-    	        degrees = 90;
-    	        break;
-    	    case Surface.ROTATION_180:
-    	        degrees = 180;
-    	        break;
-    	    case Surface.ROTATION_270:
-    	        degrees = 270;
-    	        break;
-    	    }
-        Log.i("CaptureActivity", "Degrees is " + degrees);
-    	  
         handler.shutterButtonClick();
       }
     }

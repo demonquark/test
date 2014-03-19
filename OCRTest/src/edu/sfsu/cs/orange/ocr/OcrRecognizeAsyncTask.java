@@ -22,11 +22,13 @@ import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Surface;
 
 /**
  * Class to send OCR requests to the OCR engine in a separate thread, send a success/failure message,
@@ -45,6 +47,7 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
   private int height;
   private OcrResult ocrResult;
   private long timeRequired;
+  private int rotationAngle = 0; // Desired rotation for the OCR result bitmap. (note: rotate before decoding) 
 
   OcrRecognizeAsyncTask(CaptureActivity activity, TessBaseAPI baseApi, byte[] data, int width, int height) {
     this.activity = activity;
@@ -52,12 +55,16 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
     this.data = data;
     this.width = width;
     this.height = height;
+    if(activity.mOrientationEventListener != null) { 
+    	rotationAngle = determineRotationAngle(activity.mOrientationEventListener.rotation); 
+    } 
   }
 
   @Override
   protected Boolean doInBackground(Void... arg0) {
     long start = System.currentTimeMillis();
     Bitmap bitmap = activity.getCameraManager().buildLuminanceSource(data, width, height).renderCroppedGreyscaleBitmap();
+    bitmap = rotateImage(bitmap, rotationAngle);
     String textResult;
 
     //      if (PERFORM_FISHER_THRESHOLDING) {
@@ -161,4 +168,46 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
       baseApi.clear();
     }
   }
+  
+  
+
+  /**
+   * By default the camera is in landscape mode (Surface.ROTATION_90). 
+   * The rotation angle is the angle needed to go from landscape mode to the rotation indicated in mRotation.
+   * FYI: That is ROTATION_0 => 90, ROTATION_90 => 0, ROTATION_180 => 270, ROTATION_270 => 180
+   */
+  public int determineRotationAngle(int rotation) {
+	  // By default the camera is in landscape mode.
+	  int degrees = 0;
+	  switch (rotation) {
+	    case Surface.ROTATION_0:
+	        degrees = 90;
+	        break;
+	    case Surface.ROTATION_90:
+	        degrees = 0;
+	        break;
+	    case Surface.ROTATION_180:
+	        degrees = 270;
+	        break;
+	    case Surface.ROTATION_270:
+	        degrees = 180;
+	        break;
+	    }
+	  return degrees;
+  }
+  
+  /** Rotates the image using the provided rotation angle. */
+  public Bitmap rotateImage(Bitmap bitmap, int rotationAngle) {
+	  rotationAngle = rotationAngle % 360;
+	  if(bitmap != null && rotationAngle != 0) {
+	      Matrix matrix = new Matrix();
+	      matrix.postRotate(rotationAngle);
+	      Log.v("OcrResult", "rotate the image by " + rotationAngle);
+		  return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true); 
+	  }
+	  
+	  return bitmap;
+  }
+
+
 }

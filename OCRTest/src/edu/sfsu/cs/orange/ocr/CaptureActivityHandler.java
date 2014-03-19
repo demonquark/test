@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2008 ZXing authors
- * Copyright 2011 Robert Theis
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (C) 2008 ZXing authors
+* Copyright 2011 Robert Theis
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 package edu.sfsu.cs.orange.ocr;
 
 import edu.sfsu.cs.orange.ocr.CaptureActivity;
@@ -28,10 +28,10 @@ import android.view.Gravity;
 import android.widget.Toast;
 
 /**
- * This class handles all the messaging which comprises the state machine for capture.
- *
- * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing/
- */
+* This class handles all the messaging which comprises the state machine for capture.
+*
+* The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing/
+*/
 final class CaptureActivityHandler extends Handler {
 
   private static final String TAG = CaptureActivityHandler.class.getSimpleName();
@@ -88,7 +88,7 @@ final class CaptureActivityHandler extends Handler {
         restartOcrPreview();
         break;
       case R.id.ocr_continuous_decode_failed:
-        DecodeHandler.resetDecodeState();        
+        DecodeHandler.resetDecodeState();
         try {
           activity.handleOcrContinuousDecode((OcrResultFailure) message.obj);
         } catch (NullPointerException e) {
@@ -136,7 +136,7 @@ final class CaptureActivityHandler extends Handler {
     removeMessages(R.id.ocr_continuous_decode_succeeded); // TODO are these removeMessages() calls doing anything?
     
     // Freeze the view displayed to the user.
-//    CameraManager.get().stopPreview();
+// CameraManager.get().stopPreview();
   }
   
   void resetState() {
@@ -148,7 +148,7 @@ final class CaptureActivityHandler extends Handler {
     }
   }
   
-  void quitSynchronously() {    
+  void quitSynchronously() {
     state = State.DONE;
     if (cameraManager != null) {
       cameraManager.stopPreview();
@@ -176,9 +176,9 @@ final class CaptureActivityHandler extends Handler {
   }
 
   /**
-   *  Start the preview, but don't try to OCR anything until the user presses the shutter button.
-   */
-  private void restartOcrPreview() {    
+* Start the preview, but don't try to OCR anything until the user presses the shutter button.
+*/
+  private void restartOcrPreview() {
     // Display the shutter and torch buttons
     activity.setButtonVisibility(true);
 
@@ -191,28 +191,28 @@ final class CaptureActivityHandler extends Handler {
   }
   
   /**
-   *  Send a decode request for realtime OCR mode
-   */
+* Send a decode request for realtime OCR mode
+*/
   private void restartOcrPreviewAndDecode() {
     // Continue capturing camera frames
     cameraManager.startPreview();
     
     // Continue requesting decode of images
     cameraManager.requestOcrDecode(decodeThread.getHandler(), R.id.ocr_continuous_decode);
-    activity.drawViewfinder();    
+    activity.drawViewfinder();
   }
 
   /**
-   * Request OCR on the current preview frame. 
-   */
+* Request OCR on the current preview frame.
+*/
   private void ocrDecode() {
     state = State.PREVIEW_PAUSED;
     cameraManager.requestOcrDecode(decodeThread.getHandler(), R.id.ocr_decode);
   }
   
   /**
-   * Request OCR when the hardware shutter button is clicked.
-   */
+* Request OCR when the hardware shutter button is clicked.
+*/
   void hardwareShutterButtonClick() {
     // Ensure that we're not in continuous recognition mode
     if (state == State.PREVIEW) {
@@ -221,8 +221,8 @@ final class CaptureActivityHandler extends Handler {
   }
   
   /**
-   * Request OCR when the on-screen shutter button is clicked.
-   */
+* Request OCR when the on-screen shutter button is clicked.
+*/
   void shutterButtonClick() {
     // Disable further clicks on this button until OCR request is finished
     activity.setShutterButtonClickable(false);
