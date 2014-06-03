@@ -18,8 +18,10 @@
 package edu.sfsu.cs.orange.ocr.camera;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.SoundEffectConstants;
+import android.view.Surface;
 import android.widget.ImageView;
 
 /**
@@ -30,6 +32,9 @@ import android.widget.ImageView;
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing
  */
 public class ShutterButton extends ImageView {
+	
+	public int rotation = Surface.ROTATION_90;
+	
 	/**
 	 * A callback to be invoked when a ShutterButton's pressed state changes.
 	 */
@@ -107,6 +112,16 @@ public class ShutterButton extends ImageView {
 			 mOldPressed = pressed;
 		 }
 	 }
+	 
+
+	@Override
+	public void draw(Canvas canvas) {
+	    canvas.save();
+	    canvas.rotate(((rotation * 90) + 270) % 360, getWidth() / 2, getHeight() / 2);
+	    super.draw(canvas);
+	    canvas.restore();
+	}
+
 
 	 private void callShutterButtonFocus(boolean pressed) {
 		 if (mListener != null) {

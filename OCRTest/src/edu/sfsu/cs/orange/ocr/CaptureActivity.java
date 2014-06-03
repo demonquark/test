@@ -60,6 +60,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -404,6 +407,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       baseApi.setPageSegMode(pageSegmentationMode);
       baseApi.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, characterBlacklist);
       baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, characterWhitelist);
+      baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
+      baseApi.setVariable(TessBaseAPI.VAR_USE_CJK_FP_MODEL, TessBaseAPI.VAR_TRUE);
     }
 
     if (hasSurface) {
@@ -418,11 +423,52 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 	  
 	  // create a new event listener if there is none
 	  if(mOrientationEventListener == null) {
-	    mOrientationEventListener = new CameraOrientationListener(this, SensorManager.SENSOR_DELAY_NORMAL);
+	    mOrientationEventListener = new CameraOrientationListener(this, SensorManager.SENSOR_DELAY_NORMAL){
+	    	@Override public void onRotationChanged(int rotation){ 
+//	    		  Log.d("CaptureActivity", "Assign shutter button layoutParameter.");
+	    			if(shutterButton != null){
+	    				
+	    				// Get the layout parameters
+	    				RelativeLayout.LayoutParams x = (LayoutParams) shutterButton.getLayoutParams();
+	    				
+	    				// Reset the alignment
+	    				x.addRule(RelativeLayout.ALIGN_PARENT_TOP,0);
+	    				x.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM,0);
+	    				x.addRule(RelativeLayout.ALIGN_PARENT_LEFT,0);
+	    				x.addRule(RelativeLayout.ALIGN_PARENT_RIGHT,0);
+
+	    				// Assign relative layout based on rotation 
+	    				switch(rotation){
+	    				case Surface.ROTATION_90:
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+	    					break;
+	    				case Surface.ROTATION_180:
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+	    					break;
+	    				case Surface.ROTATION_270:
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+	    					break;
+	    				default:
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+		    				x.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+	    					break;
+	    				}
+	    				
+	    				// Assign the modified layout parameters
+	    				shutterButton.rotation = rotation;
+	    	    		shutterButton.setLayoutParams(x);
+	    			}
+	    	}
+	    };
 	  }
 	  
 	  // enable orientation detection
-	  if (mOrientationEventListener.canDetectOrientation()){ mOrientationEventListener.enable(); }
+	  if (mOrientationEventListener.canDetectOrientation()){ 
+		  mOrientationEventListener.enable(); 
+	  }
   }
   
   /** Called when the shutter button is pressed in continuous mode. */
@@ -712,6 +758,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       }
     }
     
+    
     // Display the name of the OCR engine we're initializing in the indeterminate progress dialog box
     indeterminateDialog = new ProgressDialog(this);
     indeterminateDialog.setTitle("Please wait");
@@ -778,28 +825,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       bitmapImageView.setImageBitmap(lastBitmap);
     }
 
-	  int rotation = getWindowManager().getDefaultDisplay().getRotation();
-	  int degrees = 0;
-	    switch (rotation) {
-	    case Surface.ROTATION_0:
-	        degrees = 0;
-	        break;
-	    case Surface.ROTATION_90:
-	        degrees = 90;
-	        break;
-	    case Surface.ROTATION_180:
-	        degrees = 180;
-	        break;
-	    case Surface.ROTATION_270:
-	        degrees = 270;
-	        break;
-	    }
-    
+	    
     // Display the recognized text
     TextView sourceLanguageTextView = (TextView) findViewById(R.id.source_language_text_view);
     sourceLanguageTextView.setText(sourceLanguageReadable);
     TextView ocrResultTextView = (TextView) findViewById(R.id.ocr_result_text_view);
-    ocrResultTextView.setText(ocrResult.getText() + "[" + degrees + "]");
+    ocrResultTextView.setText(ocrResult.getText());
     // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
     int scaledSize = Math.max(22, 32 - ocrResult.getText().length() / 4);
     // ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize);
@@ -830,6 +861,17 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       progressView.setVisibility(View.GONE);
       setProgressBarVisibility(false);
     }
+    
+    // KRIS - replace result and translation
+    String [] textvalues = ocrResult.getText() != null ? 
+    		ocrResult.getText().split("abbaforeverabba") : "unknown:unknow".split(":");
+    ocrResultTextView.setText(textvalues[0]);
+    ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+    translationTextView.setVisibility(View.VISIBLE);
+    translationTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+    translationTextView.setText(textvalues[1]);
+    
+    
     return true;
   }
   

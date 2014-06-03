@@ -15,9 +15,13 @@
  */
 package edu.sfsu.cs.orange.ocr;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 
+import com.googlecode.leptonica.android.Pix;
 import com.googlecode.leptonica.android.ReadFile;
+import com.googlecode.leptonica.android.WriteFile;
 import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
@@ -66,6 +70,18 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
     Bitmap bitmap = activity.getCameraManager().buildLuminanceSource(data, width, height).renderCroppedGreyscaleBitmap();
     bitmap = rotateImage(bitmap, rotationAngle);
     String textResult;
+    
+    FileOutputStream out = null;
+	try {
+	       out = new FileOutputStream(new File ("/mnt/sdcard/Android/data/edu.sfsu.cs.orange.ocr/files/mounted/ocrfile.png"));
+	       bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	} finally {
+	       try{
+	           out.close();
+	       } catch(Throwable ignore) {}
+	}
 
     //      if (PERFORM_FISHER_THRESHOLDING) {
     //        Pix thresholdedImage = Thresholder.fisherAdaptiveThreshold(ReadFile.readBitmap(bitmap), 48, 48, 0.1F, 2.5F);
@@ -84,12 +100,11 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
     //      }
 
     try {     
-      baseApi.setImage(ReadFile.readBitmap(bitmap));
+        baseApi.setImage(ReadFile.readBitmap(bitmap));
       
       // TODO: REMOVE Kris
       
-      // step 1: Set the save blob choices to true. This saves the alternatives
-      baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
+      // step 1: Get the UTF8 recognized text
       textResult = baseApi.getUTF8Text();
       
       // step 2: Get the result iterator
@@ -100,7 +115,7 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
       
       r.begin();
       do { 
-    	  
+    	  i++;
     	  // step 3: Get the top choice for this item in the iterator
 		  List<Pair <String, Double>> otherResults = r.getChoicesAndConfidence(level);
     	  for (Pair <String, Double> element : otherResults) {
@@ -112,7 +127,13 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
     	  
       } while(r.next(level) && i < 100);
 
-      textResult = allResultText;
+      // KRIS - ABBAHACK add choices to the text
+      textResult += "abbaforeverabba" + allResultText;
+      
+//      textResult = "test text"; 
+      Pix thresholdedImage = baseApi.getThresholdedImage();
+
+      bitmap = WriteFile.writeBitmap(thresholdedImage);
       
       // end REMOVE
       
@@ -125,11 +146,14 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
       ocrResult = new OcrResult();
       ocrResult.setWordConfidences(baseApi.wordConfidences());
       ocrResult.setMeanConfidence( baseApi.meanConfidence());
-      ocrResult.setRegionBoundingBoxes(baseApi.getRegions().getBoxRects());
-      ocrResult.setTextlineBoundingBoxes(baseApi.getTextlines().getBoxRects());
+//      ocrResult.setRegionBoundingBoxes(baseApi.getRegions().getBoxRects());
+//      ocrResult.setTextlineBoundingBoxes(baseApi.getTextlines().getBoxRects());
       ocrResult.setWordBoundingBoxes(baseApi.getWords().getBoxRects());
-      ocrResult.setStripBoundingBoxes(baseApi.getStrips().getBoxRects());
-      //ocrResult.setCharacterBoundingBoxes(baseApi.getCharacters().getBoxRects());
+//      ocrResult.setStripBoundingBoxes(baseApi.getStrips().getBoxRects());
+      ocrResult.setCharacterBoundingBoxes(baseApi.getConnectedComponents().getBoxRects());
+//      ocrResult.setWordBoundingBoxes(new ArrayList<Rect>());
+//      ocrResult.setCharacterBoundingBoxes(new ArrayList<Rect>());
+      
     } catch (RuntimeException e) {
       Log.e("OcrRecognizeAsyncTask", "Caught RuntimeException in request to Tesseract. Setting state to CONTINUOUS_STOPPED.");
       e.printStackTrace();

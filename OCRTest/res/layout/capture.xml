@@ -182,6 +182,7 @@
               android:focusable="true"
               android:layout_alignParentRight="true"
               android:gravity="center_vertical"
+              android:layout_marginLeft="8dip"
               android:layout_marginRight="8dip"
               android:layout_marginTop="8dip"
               android:scaleType="center"
