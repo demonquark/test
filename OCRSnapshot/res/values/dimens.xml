@@ -1,0 +1,15 @@
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="button_horizontal_margin">8dp</dimen>
+    <dimen name="button_vertical_margin">8dp</dimen>
+    <dimen name="ocr_result_img_height">160sp</dimen>
+    <dimen name="ocr_result_text_large">32sp</dimen>
+    <dimen name="ocr_result_text_med">22sp</dimen>
+    <dimen name="ocr_result_text_small">12sp</dimen>
+    <dimen name="text_view_horizontal_padding">8dp</dimen>
+    <dimen name="text_view_vertical_padding">4dp</dimen>
+    
+</resources>

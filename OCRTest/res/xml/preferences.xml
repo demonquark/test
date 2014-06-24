@@ -19,10 +19,10 @@
 	<!-- GENERAL SETTINGS -->
 	<PreferenceCategory android:title="General settings">
 
-		<CheckBoxPreference android:key="preference_capture_continuous"
+<!-- 		<CheckBoxPreference android:key="preference_capture_continuous"
 			android:title="Continuous preview"
 			android:entries="@array/capturemodes" />
-
+ -->
 		<ListPreference android:title="Recognize"
 			android:key="sourceLanguageCodeOcrPref"
 			android:entries="@array/languagenames"
@@ -30,7 +30,8 @@
 			
 	</PreferenceCategory>
 
-	<!-- TRANSLATION SETTINGS -->
+<!--
+	TRANSLATION SETTINGS 
 	<PreferenceCategory android:title="Translation settings">
 
 		<CheckBoxPreference android:key="preference_translation_toggle_translation"
@@ -49,6 +50,7 @@
 			android:entryValues="@array/translators" />
 						
 	</PreferenceCategory>
+-->
 
 	<!-- ADVANCED SETTINGS -->
 	<PreferenceCategory android:title="Advanced settings">

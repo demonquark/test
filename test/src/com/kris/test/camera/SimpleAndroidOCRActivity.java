@@ -44,11 +44,14 @@ public class SimpleAndroidOCRActivity extends Activity {
 	protected EditText _field;
 	protected String _path;
 	protected boolean _taken;
+	private TessBaseAPI baseApi;
 
 	protected static final String PHOTO_TAKEN = "photo_taken";
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		
+		Log.i(TAG, "On create called.");
 
 		String[] paths = new String[] { DATA_PATH, DATA_PATH + "tessdata/" };
 
@@ -105,6 +108,12 @@ public class SimpleAndroidOCRActivity extends Activity {
 		_button.setOnClickListener(new ButtonClickHandler());
 
 		_path = DATA_PATH + "/ocr.jpg";
+		
+		baseApi = new TessBaseAPI();
+		baseApi.setDebug(true);
+		baseApi.init(DATA_PATH, lang);
+		
+
 	}
 
 	public class ButtonClickHandler implements View.OnClickListener {
@@ -209,14 +218,11 @@ public class SimpleAndroidOCRActivity extends Activity {
 		
 		Log.v(TAG, "Before baseApi");
 
-		TessBaseAPI baseApi = new TessBaseAPI();
-		baseApi.setDebug(true);
-		baseApi.init(DATA_PATH, lang);
-		baseApi.setImage(bitmap);
-		
-		String recognizedText = baseApi.getUTF8Text();
-		
-		baseApi.end();
+		String recognizedText = "recognition fail";
+		if(baseApi != null){
+			baseApi.setImage(bitmap);
+			recognizedText = baseApi.getUTF8Text();
+		} 
 
 		// You now have the text in recognizedText var, you can do anything with it.
 		// We will display a stripped out trimmed alpha-numeric version of it (if lang is eng)
@@ -237,6 +243,15 @@ public class SimpleAndroidOCRActivity extends Activity {
 		
 		// Cycle done.
 	}
+	
+	  @Override
+	  protected void onDestroy() {
+	    if (baseApi != null) {
+	      baseApi.end();
+	    }
+	    super.onDestroy();
+	  }
+
 	
 	// www.Gaut.am was here
 	// Thanks for reading!

@@ -107,6 +107,11 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
       // step 1: Get the UTF8 recognized text
       textResult = baseApi.getUTF8Text();
       
+      // Check for failure to recognize text
+      if (textResult == null || textResult.equals("")) {
+        return false;
+      }
+
       // step 2: Get the result iterator
       ResultIterator r = baseApi.getResultIterator();
       int level = com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
@@ -139,10 +144,6 @@ final class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, Boolean> {
       
       timeRequired = System.currentTimeMillis() - start;
 
-      // Check for failure to recognize text
-      if (textResult == null || textResult.equals("")) {
-        return false;
-      }
       ocrResult = new OcrResult();
       ocrResult.setWordConfidences(baseApi.wordConfidences());
       ocrResult.setMeanConfidence( baseApi.meanConfidence());

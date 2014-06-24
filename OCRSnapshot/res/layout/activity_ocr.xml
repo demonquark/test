@@ -1,0 +1,135 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".OCRActivity" >
+    
+	
+	<com.molatra.ocrtest.views.RotateImageView android:id="@+id/image_view"
+	    android:contentDescription="@string/niets"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:adjustViewBounds="true"
+		android:scaleType="centerInside" />
+	
+	<com.molatra.ocrtest.views.ViewfinderView
+		android:id="@+id/viewfinder_view"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:background="#0000"/>
+	
+	<com.molatra.ocrtest.views.ShutterButton
+	    android:id="@+id/shutter_button"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:background="@drawable/shutter_button"
+		android:clickable="true"
+		android:focusable="false"
+		android:layout_alignParentRight="true"
+		android:layout_alignParentTop="true"
+		android:gravity="center_vertical"
+		android:layout_marginRight="@dimen/button_horizontal_margin"
+		android:layout_marginTop="@dimen/button_vertical_margin"
+		android:scaleType="center" /> 
+		
+	<com.molatra.ocrtest.views.ShutterButton
+	    android:id="@+id/ocr_button"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:background="@drawable/ocr_button"
+		android:clickable="true"
+		android:focusable="false"
+		android:layout_below="@+id/shutter_button"
+		android:layout_alignParentRight="true"
+		android:gravity="center_vertical"
+		android:layout_marginRight="@dimen/button_horizontal_margin"
+		android:layout_marginTop="@dimen/button_vertical_margin"
+		android:scaleType="center" /> 
+
+	<com.molatra.ocrtest.views.RotateLayout
+	    android:id="@+id/result_rotate"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"	
+        android:gravity="center">
+	
+	<ScrollView android:id="@+id/result_scrollview"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		app:layout_angle="0">
+		
+		<LinearLayout android:id="@+id/result_container"
+		    android:paddingTop="@dimen/activity_vertical_margin"
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:orientation="vertical">
+		    
+			<ImageView android:id="@+id/ocr_result_image_view"	
+			    android:contentDescription="@string/niets"	
+			    android:layout_gravity="center_horizontal"
+			    android:layout_width="match_parent"	
+			    android:layout_height="wrap_content"
+			    android:src="@drawable/aiqingshenghuo"
+			    android:adjustViewBounds="true"
+			    android:scaleType="centerInside" />
+		    
+		    <TextView android:id="@+id/ocr_result_text_view"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:layout_gravity="center_horizontal"
+		        android:gravity="center_horizontal"
+		        android:textColor="@color/result_text"
+		        android:textColorLink="@color/result_text"
+		        android:textSize="@dimen/ocr_result_text_large"
+		        android:text="@string/unknown"
+		        android:paddingLeft="@dimen/text_view_horizontal_padding"
+		        android:autoLink="web"/>
+		    
+		    <TextView android:id="@+id/ocr_result_detail_text_view"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_gravity="center_horizontal"
+		        android:textColor="@color/result_text"
+		        android:textColorLink="@color/result_text"
+		        android:textSize="@dimen/ocr_result_text_small"
+		        android:text="@string/loremipsum"
+		        android:paddingLeft="@dimen/text_view_horizontal_padding"
+		        android:autoLink="web" />
+		</LinearLayout>
+	</ScrollView>
+	</com.molatra.ocrtest.views.RotateLayout>
+
+	<com.molatra.ocrtest.views.RotateLayout 
+	    android:id="@+id/progress_rotate"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:gravity="center">
+		
+	<LinearLayout 
+	    android:id="@+id/progress_layout"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:paddingTop="@dimen/activity_vertical_margin"
+		android:orientation="vertical"
+		app:layout_angle="0">
+
+	    <ProgressBar
+		    android:id="@+id/progress_bar"
+		    style="?android:attr/progressBarStyleLarge"
+	        android:layout_gravity="center_horizontal"
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"/>
+
+	    <TextView android:id="@+id/progress_text"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center_horizontal"
+	        android:gravity="center_horizontal"
+	        android:textColor="@color/progress_text"
+	        android:text="@string/loremipsum"
+	        android:paddingTop="@dimen/text_view_vertical_padding" />
+		
+	</LinearLayout>
+	    
+	</com.molatra.ocrtest.views.RotateLayout>
+</RelativeLayout>

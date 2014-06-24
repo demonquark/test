@@ -100,7 +100,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static final String DEFAULT_OCR_ENGINE_MODE = "Tesseract";
   
   /** The default page segmentation mode to use. */
-  public static final String DEFAULT_PAGE_SEGMENTATION_MODE = "Auto";
+  public static final String DEFAULT_PAGE_SEGMENTATION_MODE = "Auto (no OSD)";
   
   /** Whether to use autofocus by default. */
   public static final boolean DEFAULT_TOGGLE_AUTO_FOCUS = true;
@@ -118,7 +118,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static final boolean DEFAULT_TOGGLE_REVERSED_IMAGE = false;
   
   /** Whether to enable the use of online translation services be default. */
-  public static final boolean DEFAULT_TOGGLE_TRANSLATION = true;
+  public static final boolean DEFAULT_TOGGLE_TRANSLATION = false;
   
   /** Whether the light should be initially activated by default. */
   public static final boolean DEFAULT_TOGGLE_LIGHT = false;
@@ -867,9 +867,11 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     		ocrResult.getText().split("abbaforeverabba") : "unknown:unknow".split(":");
     ocrResultTextView.setText(textvalues[0]);
     ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+    if(textvalues.length >= 2){
     translationTextView.setVisibility(View.VISIBLE);
     translationTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
     translationTextView.setText(textvalues[1]);
+    }
     
     
     return true;
