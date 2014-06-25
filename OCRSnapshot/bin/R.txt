@@ -74,6 +74,9 @@ int string off 0x7f080005
 int string ok 0x7f080003
 int string on 0x7f080004
 int string reset 0x7f080008
+int string shutterDefault 0x7f080014
+int string shutterTakePic 0x7f080012
+int string shutterUseGallery 0x7f080013
 int string unknown 0x7f08000b
 int string unknownBtn 0x7f08000d
 int string yes 0x7f080001

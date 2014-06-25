@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context=".OCRActivity" >
     
-	
+    <!-- Taken picture. Takes up the entire background. -->
 	<com.molatra.ocrtest.views.RotateImageView android:id="@+id/image_view"
 	    android:contentDescription="@string/niets"
 		android:layout_width="match_parent"
@@ -13,12 +13,14 @@
 		android:adjustViewBounds="true"
 		android:scaleType="centerInside" />
 	
+    <!-- The view finder. -->
 	<com.molatra.ocrtest.views.ViewfinderView
 		android:id="@+id/viewfinder_view"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:background="#0000"/>
 	
+    <!-- Shutter buttons. First on to take a picture. Second to use OCR on Taken picture. -->
 	<com.molatra.ocrtest.views.ShutterButton
 	    android:id="@+id/shutter_button"
 		android:layout_width="wrap_content"
@@ -47,6 +49,7 @@
 		android:layout_marginTop="@dimen/button_vertical_margin"
 		android:scaleType="center" /> 
 
+    <!-- Result view. Holds the results of the OCR. -->
 	<com.molatra.ocrtest.views.RotateLayout
 	    android:id="@+id/result_rotate"
 		android:layout_width="match_parent"
@@ -99,6 +102,7 @@
 	</ScrollView>
 	</com.molatra.ocrtest.views.RotateLayout>
 
+	<!-- Progress view. Holds a progress indicator and a progress text. -->
 	<com.molatra.ocrtest.views.RotateLayout 
 	    android:id="@+id/progress_rotate"
 		android:layout_width="match_parent"

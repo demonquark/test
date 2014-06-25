@@ -146,6 +146,11 @@ containing a value of this type.
         public static final int ok=0x7f080003;
         public static final int on=0x7f080004;
         public static final int reset=0x7f080008;
+        public static final int shutterDefault=0x7f080014;
+        /**  start screen buttons 
+         */
+        public static final int shutterTakePic=0x7f080012;
+        public static final int shutterUseGallery=0x7f080013;
         public static final int unknown=0x7f08000b;
         public static final int unknownBtn=0x7f08000d;
         /**  generic strings 
