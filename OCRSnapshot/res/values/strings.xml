@@ -25,8 +25,8 @@
 	<string name="action_settings">settings</string>
 	
 	<!-- start screen buttons -->
-    <string name="shutterTakePic">Take a picture</string>
-    <string name="shutterUseGallery">Choose a picture from the gallery</string>
-    <string name="shutterDefault">Ask me what to do</string>
+    <string name="context_img_from_camera">Take a picture</string>
+    <string name="context_img_from_gallery">Choose a picture from the gallery</string>
+    <string name="context_img_default">Ask me what to do</string>
     
 </resources>

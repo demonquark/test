@@ -30,8 +30,11 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.hardware.SensorManager;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
@@ -262,7 +265,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		// Set the captured image
 		if(mCapturedImageURI != null){ 
 			Log.d(TAG, "onCreate: CapturedImageURI is not null.");
-			setSourceURI();
+			setSourceURI(mCapturedImageURI);
 		} else {
 			Log.d(TAG, "onCreate: CapturedImageURI is null.");
 			mState = State.NOPICTURE;
@@ -380,7 +383,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		
 		switch(id){
 			case R.id.shutter_button:
-				takePicture();
+				handlePicture();
 				break;
 			case R.id.ocr_button:
 				handleOCR();
@@ -392,18 +395,64 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		new CropImage(this, mOrientationListener.getRotation()).execute(mCapturedImageURI);
 	}
 
-	private void takePicture() {
-	    // make a URI for the capture images
-	    ContentValues values = new ContentValues();
-	    values.put(MediaStore.Images.Media.TITLE, Gegevens.FILE_CAMERAIMG);
-	    mCapturedImageURI = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-		Log.i(TAG,"Save picture to: "+ 	mCapturedImageURI.toString());
-		
-		// start a camera activity
-		Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE); 
-		cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCapturedImageURI);
-		startActivityForResult(cameraIntent, Gegevens.CODE_CAMERA); 
-		
+	private void handlePicture() {		
+		// TODO: build in the settings the option to default to one of the context items
+		// if default:
+		Log.i(TAG+"[handlePicture]", "showcontextMenu");
+		registerForContextMenu(mCameraButton); 
+		mCameraButton.showContextMenu();
+	    unregisterForContextMenu(mCameraButton);
+		// else if take picture: redirect to take picture
+		// else if from gallery: redirect to from gallery
+	}
+	
+	private void handlePicture(int id) {
+		switch(id){
+		case R.id.context_img_from_gallery:
+			Intent i = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+			startActivityForResult(i, Gegevens.CODE_GALLERY);
+			break;
+		case R.id.context_img_from_camera:
+			// TODO: consider saving the file to a folder instead of the gallery
+		    // make a URI for the capture images
+		    ContentValues values = new ContentValues();
+		    values.put(MediaStore.Images.Media.TITLE, Gegevens.FILE_CAMERAIMG);
+		    mCapturedImageURI = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+			Log.i(TAG,"Save picture to: "+ 	mCapturedImageURI.toString());
+
+			// start a camera activity
+			Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE); 
+			cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCapturedImageURI);
+	        startActivityForResult(cameraIntent, Gegevens.CODE_CAMERA); 
+			break;
+		}
+	}
+	
+	@Override public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		if(v.getId() == R.id.shutter_button){
+			getMenuInflater().inflate(R.menu.context_shutter, menu);
+		}
+	}
+
+    /**
+     *  Handles the context menu requests. 
+     *  Currently there is just one context menu namely the context menu for the shutter button. <br />
+     *  - if from gallery, forward an intent call to the gallery <br />
+     *  - if from camera, forward an intent call to the camera <br />
+     *  The results are handled in onActivityResult()
+     */
+	@Override public boolean onContextItemSelected(MenuItem item) {
+		int id = item.getItemId();
+		switch(id){
+		case R.id.context_img_from_gallery:
+		case R.id.context_img_from_camera:
+			handlePicture(id);
+			break;
+		default:
+			return super.onContextItemSelected(item);	
+		}
+		return true;
 	}
 	
 	private void toastMessage(String message){
@@ -429,11 +478,13 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
     	}
     }
     
-    private void setSourceURI(){
-		mSourceImageView.setImageURI(mCapturedImageURI);
-		mSourceImageView.invalidate();
-		mSourceImageView.refreshDrawableState();
-		setState(State.IDLE);
+    private void setSourceURI(Uri sourceUri){
+    	if(sourceUri != null) {
+			mSourceImageView.setImageURI(sourceUri);
+			mSourceImageView.invalidate();
+			mSourceImageView.refreshDrawableState();
+			setState(State.IDLE);
+    	}
     }
     
 	private void setState(State newState){
@@ -479,12 +530,18 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
     @Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		Log.v(TAG, "onActivityResult.");
-		if(resultCode == RESULT_OK && requestCode == Gegevens.CODE_CAMERA){
-			// Inform the user that we've made a picture
-			toastMessage("Image captured");
-			setSourceURI();
-			Log.v(TAG, "onActivityResult done.");
-			
+		if(resultCode == RESULT_OK){
+			switch(requestCode){
+			case Gegevens.CODE_GALLERY:
+				mCapturedImageURI = (data != null) ? data.getData() : null;
+			case Gegevens.CODE_CAMERA:
+				toastMessage("Image captured");
+				setSourceURI(mCapturedImageURI);
+				break;
+			default:
+				toastMessage("Not sure why that was successful");
+				break;
+			}
 		} else {
 			toastMessage("Image not captured");
 		}

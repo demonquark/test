@@ -239,8 +239,12 @@ public class OCRService extends Service {
     				super.onPostExecute(result);
 	    			Log.v(TAG, "After Init from recognize.");
     	    		if(image != null){
+    	                baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK);
+    	                baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
+    	                baseApi.setVariable(TessBaseAPI.VAR_USE_CJK_FP_MODEL, TessBaseAPI.VAR_TRUE);
+
     	        		// Create separate thread to run the recognition
-    	        		new OcrRecognizeAsyncTask(baseApi, image){
+    	                new OcrRecognizeAsyncTask(baseApi, image){
     	        			@Override protected void onCancelled(OcrResult result) {
     	        				super.onPostExecute(result);
     	        				onRecognizeAsyncTaskComplete(null);
