@@ -28,5 +28,22 @@
     <string name="context_img_from_camera">Take a picture</string>
     <string name="context_img_from_gallery">Choose a picture from the gallery</string>
     <string name="context_img_default">Ask me what to do</string>
+    <string name="context_result_copy">Copy text</string>
+    <string name="context_result_share">Share text</string>
+    <string name="text_copied">Text copied</string>
+    <string name="cancel_confirmation">Are you sure you want to cancel the ongoing background task?</string>
+    <string name="message_failed">Could not contact the OCR service</string>
+    
+    <!-- OCRService texts -->
+    <string name="notice_ticker">OCR Service running</string>
+    <string name="notice_title">OCR Snapshot</string>
+    <string name="notice_content">OCR Snapshot is running</string>
+    <string name="error_invalid_file_bmp">Invalid file. You must provide a bitmap file.</string>
+    <string name="error_invalid_state">Invalid state. Could not process the request.</string>
+    <string name="error_failed_initialize">Could not initialize the OCR engine.</string>
+    <string name="error_failed_write_file">Could not save the provided bitmap to disk.</string>
+    <string name="error_failed_read_file">Could not read the provided bitmap from the disk.</string>
+    <string name="error_failed_recognition">Initialization complete.</string>
+    <string name="success_initialization">Initialization complete.</string>
     
 </resources>

@@ -173,12 +173,8 @@ public class FileManager {
 	}
 
 	public static Bitmap readBitmapFromFile(File file) {
-	    // use default bitmap options
-		final BitmapFactory.Options options = new BitmapFactory.Options();
-	    options.inJustDecodeBounds = true;
-	    
 	    // return the read bitmap
-	    return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+	    return BitmapFactory.decodeFile(file.getAbsolutePath());
 	}
 	
 	public static void deleteAssetsFromSDCard(){

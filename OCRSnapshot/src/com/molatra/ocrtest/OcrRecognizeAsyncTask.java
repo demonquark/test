@@ -16,7 +16,6 @@
 package com.molatra.ocrtest;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.List;
 
 import com.googlecode.leptonica.android.ReadFile;
@@ -26,7 +25,6 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 import com.molatra.ocrtest.model.OcrResult;
 
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
@@ -52,7 +50,8 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 
 	@Override
 	protected OcrResult doInBackground(Void... arg0) {
-		
+    	Log.v(TAG,"recognize: (4) Bitmap is " + bitmap);
+
 		// Make sure we have access to the API and a bitmap to recognize
 		if(baseApi == null || bitmap == null){ return null; }
 		
@@ -62,12 +61,10 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 		ocrResult = null;
 		
 		try {
-			
-			// Save the original bitmap to file
-//			saveBitmap(bitmap, (start % 1000000000) + "_original.png");
-			
 			// step 1: Read the bitmap into the API
 			baseApi.setImage(ReadFile.readBitmap(bitmap));
+			bitmap.recycle();
+			bitmap = null;
 			
 			// step 2: Get the UTF8 recognized text
 			textResult = baseApi.getUTF8Text();
@@ -95,13 +92,10 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 			    	  
 			      } while(r.next(level) && i < 100);
 
-				// step 7: Show the thresholded image to the user
-				bitmap = WriteFile.writeBitmap(baseApi.getThresholdedImage());
-//				saveBitmap(bitmap, (start % 1000000000) + "_thresholded.png");
-				
-				// step 8: Save the results to a new ocrResult object
+				// step 7: Save the results to a new ocrResult object
 				ocrResult = new OcrResult();
-				ocrResult.setBitmap(bitmap);
+				ocrResult.setBitmap(WriteFile.writeBitmap(baseApi.getThresholdedImage()));
+    	    	Log.v(TAG,"recognize: (5) Bitmap is " + bitmap);
 				ocrResult.setText(textResult);
 				ocrResult.longtext = allResultText;
 				ocrResult.setWordConfidences(baseApi.wordConfidences());
@@ -118,8 +112,11 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 			
 		} finally{
 
-			// step 6: Clear the API (free up the resources)
-			try { baseApi.clear(); } catch (NullPointerException e1) { Log.e(TAG, "baseApi is null"); }		
+			// step 8: Clear the API (free up the resources)
+			try { 
+				baseApi.clear();
+				Log.v(TAG,"Base API cleared.");
+			} catch (NullPointerException e1) { Log.e(TAG, "baseApi is null"); }		
 		}
 
 		return ocrResult;
@@ -129,56 +126,5 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 	protected void onPostExecute(OcrResult result) {
 		super.onPostExecute(result);
 		Log.i(TAG, "onPostExecute not implemented. Please override this method...");
-	}
-	
-	/** Rotates the image using the provided rotation angle. */
-	public Bitmap rotateImage(Bitmap bitmap, int rotationAngle) {
-		rotationAngle = rotationAngle % 360;
-		if(bitmap != null && rotationAngle != 0) {
-				Matrix matrix = new Matrix();
-				matrix.postRotate(rotationAngle);
-				Log.v("OcrResult", "rotate the image by " + rotationAngle);
-			return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true); 
-		}
-		
-		return bitmap;
-	}
-	
-	private boolean saveBitmap(Bitmap bitmap, String filename){
-		
-		boolean success = false;
-		
-		// Make sure we have a file and a file name
-		success = (bitmap != null) &&(filename != null) && !("".equals(filename));
-		
-		// Make sure we have a base directory.
-		success = success && (baseDir != null) && (baseDir.mkdirs() || baseDir.isDirectory());
-		
-		// Save the bitmap to file
-		if(success){
-			
-			// give the bitmap a png extension.
-			if(!filename.endsWith(".png")){
-				filename += ".png";
-			}
-			
-			// Write the bitmap to file
-			FileOutputStream out = null;
-			try {
-				out = new FileOutputStream(new File (baseDir, filename));
-				bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
-			} catch (Exception e) {
-				// Return failure 
-				success = false;
-
-				// Just print any encountered errors
-				e.printStackTrace();
-			} finally {
-				// Close the output stream
-				if(out != null){ try{ out.close(); } catch(Throwable ignore) { ignore.printStackTrace(); } }
-			}
-		}
-		
-		return success;
 	}
 }

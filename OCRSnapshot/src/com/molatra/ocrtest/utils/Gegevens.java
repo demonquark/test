@@ -15,7 +15,8 @@ public class Gegevens {
 	public static final String EXTRA_MSGID			= "msgId";
 	public static final String EXTRA_LANGUAGE		= "chi_sim";
 	public static final String EXTRA_MESSENGER		= "messenger";
-	public static final String EXTRA_URI			= "uri";
+	public static final String EXTRA_IMG			= "image";
+	public static final String EXTRA_PATH			= "path";
 	public static final String EXTRA_STATE			= "state";
 	
 	/** Folder and file names */
@@ -45,6 +46,7 @@ public class Gegevens {
 	/** Request and result codes */
 	public static final int CODE_CAMERA 			= 86001;
 	public static final int CODE_GALLERY 			= 86002;
+	public static final int CODE_SERVICE			= 86003;
 	
 	/** Frequently used URLs. Note: there is no trailing slash. */
 	public static final String URL_ANDROID_MARKET 		= "http://market.android.com";

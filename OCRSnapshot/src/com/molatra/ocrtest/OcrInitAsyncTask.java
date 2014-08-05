@@ -605,6 +605,6 @@ class OcrInitAsyncTask extends AsyncTask<String, String, Boolean> {
 		super.onPostExecute(result);
 
 		// Inform the service of what we're doing (use -1 for indeterminate progress)
-		service.onAsyncProgress(OCRService.MSG_REPLY_INIT, "Initialization Complete", -1);
+		service.onAsyncProgress(OCRService.MSG_PROGRESS, "Initialization Complete", -1);
 	}
 }

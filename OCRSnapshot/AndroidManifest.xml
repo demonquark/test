@@ -3,6 +3,7 @@
     package="com.molatra.ocrtest"
     android:versionCode="1"
     android:installLocation="preferExternal"
+    android:debuggable="true"
     android:versionName="1.0" >
 
     <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="19" />

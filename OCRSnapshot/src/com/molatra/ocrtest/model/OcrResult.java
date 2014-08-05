@@ -15,7 +15,6 @@
  */
 package com.molatra.ocrtest.model;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap;
@@ -24,14 +23,11 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.util.Log;
 
 /**
  * Encapsulates the result of OCR.
  */
-public class OcrResult implements Parcelable{
+public class OcrResult {
   private Bitmap bitmap;
   private String text;
   public String longtext;
@@ -48,78 +44,8 @@ public class OcrResult implements Parcelable{
   private long timestamp;
   private long recognitionTimeRequired;
   
-  private String TAG = "OcrResult";
+  public static final String TAG = "OcrResult";
 
-  
-  private OcrResult(Parcel in) {
-	  // Note: you need to read the items in the same order that you wrote them
-	  this.bitmap 					= in.readParcelable(getClass().getClassLoader());
-	  this.text 					= in.readString();
-	  this.wordConfidences			= in.createIntArray();
-	  this.meanConfidence 			= in.readInt();
-	  parcelableArrayToRectList(in.createTypedArray(Rect.CREATOR), regionBoundingBoxes);
-	  parcelableArrayToRectList(in.createTypedArray(Rect.CREATOR), this.textlineBoundingBoxes);
-	  parcelableArrayToRectList(in.createTypedArray(Rect.CREATOR), this.wordBoundingBoxes);
-	  parcelableArrayToRectList(in.createTypedArray(Rect.CREATOR), this.stripBoundingBoxes);
-	  parcelableArrayToRectList(in.createTypedArray(Rect.CREATOR), this.characterBoundingBoxes);
-	  this.timestamp				= in.readLong();
-	  this.recognitionTimeRequired	= in.readLong(); 
-  }
-
-  // this is used to regenerate your object.
-  public static final Parcelable.Creator<OcrResult> CREATOR = new Parcelable.Creator<OcrResult>() {
-      public OcrResult createFromParcel(Parcel in) { return new OcrResult(in); }
-      public OcrResult[] newArray(int size) { return new OcrResult[size]; }
-  };
-
-  @Override public int describeContents() { return 0; }
-
-  @Override
-  public void writeToParcel(Parcel dest, int flags) {
-	  // Note: you need to read the items in the same order that you wrote them
-	  dest.writeParcelable(bitmap, 0);
-	  dest.writeString(text);
-	  dest.writeIntArray(wordConfidences != null ? wordConfidences : new int [0]);
-	  dest.writeInt(meanConfidence);
-	  dest.writeParcelableArray(rectListToParcelableArray(regionBoundingBoxes), 0);
-	  dest.writeParcelableArray(rectListToParcelableArray(textlineBoundingBoxes), 0);
-	  dest.writeParcelableArray(rectListToParcelableArray(wordBoundingBoxes), 0);
-	  dest.writeParcelableArray(rectListToParcelableArray(stripBoundingBoxes), 0);
-	  dest.writeParcelableArray(rectListToParcelableArray(characterBoundingBoxes), 0);
-	  dest.writeLong(timestamp);
-	  dest.writeLong(recognitionTimeRequired);
-  }
-  
-  private void parcelableArrayToRectList(Parcelable [] source, List <Rect> destination){
-	  
-	  // Make sure we have a list 
-	  if(destination == null){ destination = new ArrayList <Rect> (); }
-	  
-	  // Cast each parcelable to a Rect
-	  for(Parcelable t : source){ 
-		  try {
-			  destination.add((Rect) t);
-		  } catch (ClassCastException e){
-			  Log.e(TAG, "Could not cast " + t.toString() + " to Rect.");
-		  }
-	  }
-  }
-  
-  private Rect [] rectListToParcelableArray(List <Rect> source){
-	  
-	  // Make sure we have a list 
-	  if(source == null){ source = new ArrayList <Rect> (); }
-	  Rect [] rectArray = new Rect [source.size()];
-	  
-	  // Copy each Rect to the array
-	  int i = 0;
-	  for(Rect r : source){ 
-		  rectArray[i] = r;
-	  }
-	  
-	  return rectArray;
-  }
-  
   public OcrResult(Bitmap bitmap,
                    String text,
                    int[] wordConfidences,
@@ -153,10 +79,11 @@ public class OcrResult implements Parcelable{
   }
   
   private Bitmap getAnnotatedBitmap() {
-    Canvas canvas = new Canvas(bitmap);
-    Paint paint = new Paint();
     
     if(wordBoundingBoxes != null  && bitmap != null && characterBoundingBoxes != null){
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+
         // Draw bounding boxes around each word
         for (Rect r : wordBoundingBoxes) {
           paint.setAlpha(0xFF);
@@ -224,6 +151,8 @@ public class OcrResult implements Parcelable{
   }
   
   public void setBitmap(Bitmap bitmap) {
+	// (speed up the) clean up the old bitmap
+	if (this.bitmap != null){ this.bitmap.recycle(); this.bitmap = null; }
     this.bitmap = bitmap;
   }
   
@@ -263,9 +192,9 @@ public class OcrResult implements Parcelable{
     this.characterBoundingBoxes = characterBoundingBoxes;
   }
   
-  @Override
-  public String toString() {
-    return text + " " + meanConfidence + " " + recognitionTimeRequired + " " + timestamp;
-  }
+//  @Override
+//  public String toString() {
+//    return text + " " + meanConfidence + " " + recognitionTimeRequired + " " + timestamp;
+//  }
 
 }
