@@ -49,20 +49,11 @@ public class CropImageAsyncTask extends AsyncTask<Void, Void, Bitmap> {
     public float getRotationAngleForBitmap(int rotation){
     	
 		float rotationAngle = 0;
-		
 		switch(rotation){
-		case Surface.ROTATION_90: // 1
-			rotationAngle = 0;
-			break;
-		case Surface.ROTATION_180: // 2
-			rotationAngle = 270;
-			break;
-		case Surface.ROTATION_270: // 3
-			rotationAngle = 180;
-			break;
-		case Surface.ROTATION_0: // 0
-			rotationAngle = 90;
-			break;
+			case Surface.ROTATION_90:	rotationAngle = 0;		break;
+			case Surface.ROTATION_180:	rotationAngle = 270;	break;
+			case Surface.ROTATION_270:	rotationAngle = 180;	break;
+			case Surface.ROTATION_0:	rotationAngle = 90;		break;
 		}
     	
     	return rotationAngle;

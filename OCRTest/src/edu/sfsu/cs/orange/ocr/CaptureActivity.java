@@ -112,7 +112,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static final boolean DEFAULT_TOGGLE_BEEP = false;
   
   /** Whether to initially show a looping, real-time OCR display. */
-  public static final boolean DEFAULT_TOGGLE_CONTINUOUS = false;
+  public static final boolean DEFAULT_TOGGLE_CONTINUOUS = true;
   
   /** Whether to initially reverse the image returned by the camera. */
   public static final boolean DEFAULT_TOGGLE_REVERSED_IMAGE = false;

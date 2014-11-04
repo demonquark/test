@@ -243,15 +243,21 @@ public final class ViewfinderView extends View {
 	public synchronized void adjustFramingRect(int deltaLeft, int deltaTop, int deltaRight, int deltaBottom) {
 		if(rect != null && screenResolution != null){
 			// Resize the rectangle
-			if(rect.left - deltaLeft > CORNER_SIZE && rect.left - deltaLeft < rect.right ){ rect.left -= deltaLeft; } 
-			if(rect.top - deltaTop > CORNER_SIZE && rect.top - deltaTop < rect.bottom){ rect.top -= deltaTop; } 
-			if(rect.right + deltaRight < screenResolution.x - CORNER_SIZE && rect.right + deltaRight > rect.left){ 
-				rect.right += deltaRight; 
-			} 
-			if(rect.bottom + deltaBottom < screenResolution.y - CORNER_SIZE && rect.bottom + deltaBottom > rect.top) { 
-				rect.bottom += deltaBottom; 
+//			Log.d(TAG, "new size? " + ((rect.right + deltaRight) - ( rect.left - deltaLeft)) + "x" 
+//			+ ((rect.bottom + deltaBottom) - (rect.top - deltaTop)));
+			if(rect.right + deltaRight - ( rect.left - deltaLeft) > MIN_FRAME_WIDTH){
+				if(rect.left - deltaLeft > CORNER_SIZE && rect.left - deltaLeft < rect.right ){ rect.left -= deltaLeft; } 
+				if(rect.right + deltaRight < screenResolution.x - CORNER_SIZE && rect.right + deltaRight > rect.left){ 
+					rect.right += deltaRight; 
+				} 
 			}
 			
+			if((rect.bottom + deltaBottom) - (rect.top - deltaTop) > MIN_FRAME_HEIGHT){
+				if(rect.top - deltaTop > CORNER_SIZE && rect.top - deltaTop < rect.bottom){ rect.top -= deltaTop; } 
+				if(rect.bottom + deltaBottom < screenResolution.y - CORNER_SIZE && rect.bottom + deltaBottom > rect.top) { 
+					rect.bottom += deltaBottom; 
+				}
+			}			
 		} else {
 			Log.e(TAG, "Cannot adjust framing rect (adjustFramingRect). " + 
 					(rect == null ? "rect is null " : "") +

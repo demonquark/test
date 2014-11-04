@@ -5,4 +5,6 @@
         android:title="@string/context_img_from_gallery" />
     <item android:id="@+id/context_img_from_camera"
         android:title="@string/context_img_from_camera" />
+    <item android:id="@+id/context_img_continuous"
+        android:title="@string/context_img_continuous" />
 </menu>

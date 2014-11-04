@@ -5,6 +5,7 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="button_horizontal_margin">8dp</dimen>
     <dimen name="button_vertical_margin">8dp</dimen>
+    <dimen name="button_icon_padding">4dp</dimen>
     <dimen name="ocr_result_img_height">160sp</dimen>
     <dimen name="ocr_result_text_large">32sp</dimen>
     <dimen name="ocr_result_text_med">22sp</dimen>

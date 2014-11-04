@@ -10,6 +10,9 @@ public class Gegevens {
 	
 	/** Preferences */
 	public static final String PREF_LANGUAGE 		= "language";
+	public static final String PREF_TORCH 			= "torch";
+	public static final String PREF_AUTOFOCUS 		= "autofocus";
+	public static final String PREF_REVERSE_IMG		= "reverse_img";
 
 	/** Intent and Bundle Extras */
 	public static final String EXTRA_MSGID			= "msgId";

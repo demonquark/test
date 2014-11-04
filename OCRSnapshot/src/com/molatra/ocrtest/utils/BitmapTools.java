@@ -31,6 +31,8 @@ public class BitmapTools {
 
 	    // Decode bitmap with inSampleSize set
 	    options.inJustDecodeBounds = false;
+	    options.inPurgeable= true;
+	    options.inInputShareable = true;
 	    return BitmapFactory.decodeFile(pathName, options);
 	}
 	
@@ -155,6 +157,9 @@ public class BitmapTools {
 		BitmapFactory.Options options = new BitmapFactory.Options();
 	    options.inJustDecodeBounds = false;
 	    options.inSampleSize = inSampleSize;
+	    options.inPurgeable= true;
+	    options.inInputShareable = true;
+	    options.inPreferredConfig = Bitmap.Config.ARGB_4444;
 	    
 	    // Get the bitmap
 	    Bitmap bitmap = BitmapFactory.decodeFile(pathName, options);
@@ -243,7 +248,7 @@ public class BitmapTools {
 	
 	public static Bitmap rotateImage(Bitmap src, float degree) {
 		Log.v(TAG, "rotateImage: " + degree);
-		if(degree != 0 && ((int)degree) % 360 != 0){
+		if(src != null && ((int)degree) % 360 != 0){
 			// We need to rotate the bitmap before overwriting the original. 
 	        Matrix matrix = new Matrix();
 	        matrix.postRotate(degree);

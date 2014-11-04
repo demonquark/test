@@ -14,6 +14,7 @@
     <string name="reset">Reset</string>
     <string name="error">Error</string>
     <string name="cancel">Cancel</string>
+    <string name="copied">copied</string>
     <string name="unknown">Unknown</string>
     <string name="invalidInput">Invalid input</string>
     <string name="unknownBtn">You pressed an unknown button</string>
@@ -27,23 +28,58 @@
 	<!-- start screen buttons -->
     <string name="context_img_from_camera">Take a picture</string>
     <string name="context_img_from_gallery">Choose a picture from the gallery</string>
+    <string name="context_img_continuous">Continuous decoding</string>
     <string name="context_img_default">Ask me what to do</string>
     <string name="context_result_copy">Copy text</string>
     <string name="context_result_share">Share text</string>
     <string name="text_copied">Text copied</string>
     <string name="cancel_confirmation">Are you sure you want to cancel the ongoing background task?</string>
     <string name="message_failed">Could not contact the OCR service</string>
+    <string name="intro_download_warning">Thank you for using the Snapshot OCR app
+        \n Before you get started, you will need to download several supporting data files:
+        \n - Tesseract Orientation &amp; Script Detection Data (4.1Mb)
+        \n - Chinese (Simplified) language data for Tesseract 3.02 (17.1Mb)
+        \n The files are quite large, so you may want to connect to a WiFi network, before downloading them.
+        \n Click the button below to download the files and finish installing the OCR engine.</string>
+    <string name="intro_download_btn">Download files</string>
+    
+    <!-- Continuous recognition texts -->
+    <string name="initializing">Initializing OCR engine&#8230;</string>
+    <string name="hint_stop_recognition">Press the back button to stop continuous decoding.</string>
+    <string name="continuous_hint_title">Hint</string>
+    <string name="continuous_hint_text">Press OCR button to start.\nPress back button to stop.</string>
     
     <!-- OCRService texts -->
     <string name="notice_ticker">OCR Service running</string>
     <string name="notice_title">OCR Snapshot</string>
     <string name="notice_content">OCR Snapshot is running</string>
     <string name="error_invalid_file_bmp">Invalid file. You must provide a bitmap file.</string>
+    <string name="error_invalid_recognition">Invalid reply from recognize.</string>
     <string name="error_invalid_state">Invalid state. Could not process the request.</string>
+    <string name="error_invalid_state_initialize">Invalid state for initialization.</string>
+    <string name="error_invalid_state_recognize">Invalid state for recognition.</string>
+    <string name="error_already_initialized">The OCR engine is already running.</string>
     <string name="error_failed_initialize">Could not initialize the OCR engine.</string>
     <string name="error_failed_write_file">Could not save the provided bitmap to disk.</string>
     <string name="error_failed_read_file">Could not read the provided bitmap from the disk.</string>
-    <string name="error_failed_recognition">Initialization complete.</string>
+    <string name="error_failed_recognition">Recogntion failed.</string>
     <string name="success_initialization">Initialization complete.</string>
+    <string name="success_release">OCR Engine resources released.</string>
+    <string name="busy_recognizing">Recognizing text&#8230;</string>
+    <string name="init_verifying">Verifying install data for</string>
+    <string name="init_initializing">Initializing OCR for</string>
+    <string name="init_verification_failed">Data verification failed.</string>
+    <string name="init_verification_success">Data verification complete.</string>
+    <string name="init_initialization_failed">Initialization failed.</string>
+    <string name="init_initialization_success">Initialization complete.</string>
+    <string name="init_connecting_to">Connecting to</string>
+    <string name="init_downloading">Downloading</string>
+    <string name="init_extracting">Extracting</string>
+    <string name="init_installing">Installing</string>
+    
+    <!-- Result screen -->
+    <string name="result_copy_btn">Copy to clipboard</string>
+    <string name="result_detail_show_btn">Show result details</string>
+    <string name="result_detail_hide_btn">Hide result details</string>
     
 </resources>

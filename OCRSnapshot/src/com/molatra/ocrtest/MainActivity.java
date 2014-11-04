@@ -18,18 +18,10 @@ import com.molatra.ocrtest.views.ViewfinderView;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
-import android.os.RemoteException;
 import android.provider.MediaStore;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.hardware.SensorManager;
@@ -41,17 +33,16 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-public class OCRActivity extends Activity implements OnShutterButtonListener, PhoneRotationListener {
+public class MainActivity extends OCRBaseActivity implements OnShutterButtonListener, PhoneRotationListener {
 	
-	private static final String TAG = "OCRActivity";
+	private static final String TAG = MainActivity.class.getSimpleName();
 	
     public enum State {
     	NOPICTURE,
@@ -75,35 +66,20 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 	private TextView mResultDetailTextView;
 	private ShutterButton mCameraButton;
 	private ShutterButton mOCRButton;
+	private Button mResultDetailButton;
 	private PhoneOrientationListener mOrientationListener;
 		
 	private State mState;
-    private Messenger mService;
 	private String mSourceImagePath;
 	private static long start1;
+	private boolean installationVerified = false;
 	
-    /** Class for interacting with the main interface of the service. */
-    private ServiceConnection mConnection = new ServiceConnection() {
-    	public void onServiceConnected(ComponentName className, IBinder service) {
-    		// This is called when the connection with the service has been established
-        	Log.v(TAG,"onServiceConnected");
-            mService = new Messenger(service);
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            // This is called when the connection with the service has been
-            // unexpectedly disconnected -- that is, its process crashed.
-        	Log.v(TAG,"onServiceDisconnected");
-            mService = null;
-        }
-    };
-    
     /** Handler of incoming messages from service. */
     static private class IncomingHandler extends Handler {
-	    private final WeakReference<OCRActivity> mActivity; 
+	    private final WeakReference<MainActivity> mActivity; 
 
-	    IncomingHandler(OCRActivity activity) {
-	    	mActivity = new WeakReference<OCRActivity>(activity);
+	    IncomingHandler(MainActivity activity) {
+	    	mActivity = new WeakReference<MainActivity>(activity);
 	    }
 
 	    @Override
@@ -112,44 +88,31 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 	    	// Make sure the activity exists
 	    	if(mActivity.get() != null){
 	            switch (msg.what) {
-                case OCRService.MSG_GETSTATE:
-                	mActivity.get().toastMessage("State is: " + msg.obj.toString());
-                	break;
                 case OCRService.MSG_ERROR:
-//                	mActivity.get().setState(mActivity.get().mCapturedImageURI == null ? State.NOPICTURE : State.IDLE);
-                	mActivity.get().setState(State.NOPICTURE);
-                	mActivity.get().toastMessage(msg.obj.toString());
-                    break;
                 case OCRService.MSG_REPLY:
-                	mActivity.get().toastMessage(msg.obj.toString());
+                	mActivity.get().handleReplyText(msg.what, msg.arg1, msg.arg2, msg.obj.toString());
                     break;
                 case OCRService.MSG_PROGRESS:
-                	mActivity.get().mProgressText.setText(msg.obj.toString());
+                	mActivity.get().handleProgressText(msg.what, msg.arg1, msg.arg2, msg.obj.toString());
                     break;
                 case OCRService.MSG_RESULT:
                 	if(msg.obj instanceof OcrResult){
-                		OcrResult result = (OcrResult) msg.obj;
-                    	Log.i(TAG, "Recognize result (" + result.toString() + "): " + result.getText());
-                		
-                    	if(result.getBitmap() != null){ 
-                	    	Log.v(TAG,"recognize: (7) Bitmap is " + result.getBitmap());
-                    		mActivity.get().mResultImageView.setImageBitmap(result.getBitmap());
-                    		mActivity.get().mSourceImageView.invalidate();
-                    		mActivity.get().mSourceImageView.refreshDrawableState();
-                    	}
-                		mActivity.get().mResultTextView.setText(result.getText());
-                		mActivity.get().mResultDetailTextView.setText(result.longtext 
-                				+ "\n" + result.getRecognitionTimeRequired() + "ms" 
-                				+ " | " + (System.currentTimeMillis() - start1) + "ms");
-                    	mActivity.get().setState(State.DONE);
-                    	result = null;
+                		mActivity.get().handleOCRResult((OcrResult) msg.obj);
                 	} else {
-                    	mActivity.get().toastMessage("Invalid reply from recognize");
-//                    	mActivity.get().setState(mActivity.get().mCapturedImageURI == null ? State.NOPICTURE : State.IDLE);
-                    	mActivity.get().setState(State.NOPICTURE);
+                		mActivity.get().handleReplyText(OCRService.MSG_ERROR, msg.arg1, msg.arg2, 
+                				mActivity.get().getString(R.string.error_invalid_recognition));
                 	}
                     break;
+                case OCRService.MSG_RESULT_TXT:
+                	mActivity.get().mResultImageView.setImageResource(R.drawable.aiqingshenghuo);
+            		mActivity.get().mSourceImageView.invalidate();
+            		mActivity.get().mSourceImageView.refreshDrawableState();
+                	mActivity.get().mResultTextView.setText(String.valueOf(msg.obj));
+                	mActivity.get().mResultDetailTextView.setText("");
+                	mActivity.get().setState(State.DONE);
+                	break;
                 default:
+    	    		Log.e(TAG,"IncomingHandler: Unexpected message ID. what = " + msg.what);	    		
                     super.handleMessage(msg);
 	            }
 	    	} else {
@@ -162,6 +125,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		Log.v(TAG, "onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_ocr);
+		setTag(TAG);
 		
 		// Load the views (and assign listeners)
 		loadViews();
@@ -201,7 +165,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 	
 	@Override public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.ocr, menu);
+//		getMenuInflater().inflate(R.menu.ocr, menu);
 		return true;
 	}
 
@@ -222,6 +186,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
      *  Context menu for the shutter button: <br />
      *  - if from gallery, forward an intent call to the gallery <br />
      *  - if from camera, forward an intent call to the camera <br />
+     *  - if continuous, open the CaptureActivity <br />
      *  The results are handled in onActivityResult()
      *  Context menu for the result text views:
      *  - if context_result_copy, copy the text to the clip board
@@ -234,9 +199,12 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		case R.id.context_img_from_camera:
 			handlePicture(id);
 			break;
+		case R.id.context_img_continuous:
+			startActivity(new Intent(this, CaptureActivity.class));
+			break;
 		case R.id.context_result_copy:
 		    ((android.text.ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setText(mResultTextView.getText());
-		    toastMessage(getString(R.string.text_copied));
+		    toastMessage(getString(R.string.text_copied), Gravity.BOTTOM);
 		default:
 			return super.onContextItemSelected(item);	
 		}
@@ -261,8 +229,11 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
     @Override public void onBackPressed(){
     	if(mState == State.DONE){
     		setState(State.IDLE);
-//    	} else if (mState == State.BUSY){
-//    		confirmBack(getString(R.string.cancel), getString(R.string.cancel_confirmation));
+    	} else if (mState == State.BUSY){
+			// Cancel ongoing task and go back to the previous Activity (MainActivity)
+			Message msg = Message.obtain(null, OCRService.MSG_CANCEL);
+			msg.replyTo = mMessenger;
+			sendMessage(msg);
     	} else {
         	super.onBackPressed();
     	}
@@ -283,6 +254,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		mOCRButton = (ShutterButton) findViewById(R.id.ocr_button);
 		mProgressLayout = (LinearLayout) findViewById(R.id.progress_layout);
 		mScrollView = (ScrollView) findViewById(R.id.result_scrollview);
+		mResultDetailButton = (Button) findViewById(R.id.ocr_result_detail_button);
 		
 		// Set listener to detect a shutter button click
 		mCameraButton.setOnShutterButtonListener(this);
@@ -425,6 +397,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 						msg.replyTo = mMessenger;
 						msg.obj = result;
 						success = sendMessage(msg);
+						mProgressText.setText(getString(R.string.busy_recognizing));
 					}
 					
 					if(!success){
@@ -505,84 +478,122 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		// Update the image view
 		setSourceImageView(capturedImagePath);
 	}
+	
+	private void handleReplyText(int msgCode, int requestCode, int serviceState, String message){
+		Log.v(TAG, "handleReplyText. messageCode is " + msgCode + ". requestCode is " + requestCode);
+		
+		if(requestCode == OCRService.MSG_INSTALL_CHECK){
+			// Install checks require a different use case path
+			handleInstallCheck(msgCode, message);
+		} else {
 
-	private void toastMessage(String message){
-		Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
-		toast.setGravity(Gravity.TOP, 0, 0);
-		toast.show();
+			// Errors and initialization completion should exit the busy state 
+			if(msgCode == OCRService.MSG_ERROR || requestCode == OCRService.MSG_INITIALIZE){
+				setSourceImageView(mSourceImagePath);
+			}
+			
+			// Everything should toast the reply
+			toastMessage(message);
+		}
+	}
+	/**
+	 * The installation check is verify that the Tesseract data files are present.
+	 * If they are present, continue by showing the default camera button options
+	 * If they are not present, ask the user to download the files before continuing 
+	 * 
+	 * @param msgCode		Should be MSG_ERROR (if verification failed) or MSG_REPLY (if verification succesful)
+	 * @param message		Message so we can inform the user of what is happening
+	 */
+	private void handleInstallCheck(int msgCode, String message){
+		switch(msgCode){
+		case OCRService.MSG_ERROR:
+			// Move to the busy state and show the first time installation text
+			setState(State.BUSY);
+			findViewById(R.id.progress_bar).setVisibility(View.INVISIBLE);
+			mProgressText.setText(getString(R.string.intro_download_warning));
+			findViewById(R.id.progress_intro_download_btn).setVisibility(View.VISIBLE);
+			
+			break;
+		case OCRService.MSG_REPLY:
+			installationVerified = true;
+			onShutterButtonClick(mCameraButton);
+			break;
+		default:
+			break;
+		}
+		
 	}
 	
+	private void handleOCRResult(OcrResult result){
+    	Log.i(TAG, "Recognize result (" + result.toString() + "): " + result.getText());
+		
+    	// Show an image of the recognized words and symbols
+    	if(result.getBitmap() != null){ 
+	    	Log.v(TAG,"recognize: (7) Bitmap is " + result.getBitmap());
+    		mResultImageView.setImageBitmap(result.getBitmap());
+    		mSourceImageView.invalidate();
+    		mSourceImageView.refreshDrawableState();
+    	}
+    	
+    	// Show the result text
+		mResultTextView.setText(result.getText());
+		mResultDetailTextView.setText(result.longtext 
+				+ "\n" + result.getRecognitionTimeRequired() + "ms" 
+				+ " | " + (System.currentTimeMillis() - start1) + "ms");
+    	
+		// Hide the detailed text
+		mResultDetailButton.setText(getString(R.string.result_detail_show_btn));
+		mResultDetailTextView.setVisibility(View.GONE);
+		
+		setState(State.DONE);
+    	result = null;
+	}
+	
+	private void handleProgressText(int msgCode, int requestCode, int serviceState, String message){
+		mProgressText.setText(message);
+	}
+
 	private DisplayMetrics getDisplayMetrics(){
 		DisplayMetrics displaymetrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
 		return displaymetrics;
 	}
-
-	private void confirmBack(String title, String message){
-		
-		DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-		    @Override public void onClick(DialogInterface dialog, int which) {
-		        if (which == DialogInterface.BUTTON_POSITIVE){
-		        	// release the service resources
-		        	if(!sendMessage(Message.obtain(null, OCRService.MSG_RELEASE))) {
-		        		// Inform the user if the release failed
-		        		toastMessage((getString(R.string.message_failed))); 
-		        	}
-		        	// go back to the initial state
-		        	setState((mSourceImagePath == null)  ? State.NOPICTURE : State.IDLE);
-		        }
-		        // Dismiss the dialog 
-		        dialog.dismiss();
-		    }
-		};
-
-		// Build and show the alert
-		(new AlertDialog.Builder(this))
-			.setTitle(title)
-			.setMessage(message)
-			.setPositiveButton(getString(R.string.yes), dialogClickListener)
-			.setNegativeButton(getString(R.string.no), dialogClickListener)
-			.setCancelable(true)
-			.show();
-		
-	}
-
-	private boolean sendMessage(Message msg){
-
-		boolean msgsent = false;
-		
-		try {
-			mService.send(msg);
-			msgsent = true;
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			msgsent = false;
-		} catch (NullPointerException e){
-			e.printStackTrace();
-			msgsent = false;
+	
+	@SuppressWarnings("deprecation")
+	public void onBtnClick(View view){
+		int id = view.getId();
+		switch(id){
+			case R.id.ocr_result_copy_button:
+			    ((android.text.ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setText(mResultTextView.getText());
+			    toastMessage(getString(R.string.text_copied), Gravity.BOTTOM);
+				break;
+			case R.id.ocr_result_detail_button:
+				if(mResultDetailTextView.getVisibility() == View.GONE){
+					mResultDetailButton.setText(getString(R.string.result_detail_hide_btn));
+					mResultDetailTextView.setVisibility(View.VISIBLE);
+				} else {
+					mResultDetailButton.setText(getString(R.string.result_detail_show_btn));
+					mResultDetailTextView.setVisibility(View.GONE);
+				}
+				break;
+			case R.id.progress_intro_download_btn:
+				// Clean up the busy state views 
+				findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
+				mProgressText.setText(getString(R.string.niets));
+				findViewById(R.id.progress_intro_download_btn).setVisibility(View.GONE);
+				
+				// Initialize the OCR engine (will automatically download the Tesseract files)
+				Message msg = Message.obtain(null, OCRService.MSG_INITIALIZE);
+				msg.replyTo = mMessenger;
+				msg.arg1 = 0;				// Do NOT reinitialize the engine 
+				msg.obj = Gegevens.EXTRA_LANGUAGE;
+				if(!sendMessage(msg)){
+					toastMessage("Could not contact the OCR engine. Please restart the app.");	
+				}
+				break;
 		}
-		
-		return msgsent;
-
 	}
-	
-	private void doBindService() {
-		Log.v(TAG, "doBindService: Bind the service.");
-        // Establish a connection with the service. 
-        bindService(new Intent(this, OCRService.class), mConnection, Context.BIND_AUTO_CREATE);
-    }
-    
-    private void doUnbindService() {
-		Log.v(TAG, "doUnbindService: Unbind the service.");
-    	try{
-	        // Detach our existing connection.
-	        unbindService(mConnection);
-    	}catch(IllegalArgumentException e){ 
-    		Log.e(TAG, "doUnbindService: Service not registered.");
-    		e.printStackTrace();
-    	}
-    }
-	
+
 	@Override public void onShutterButtonFocus(ShutterButton b, boolean pressed) {
 		Log.v(TAG, "onShutterButtonFocus");
 	}
@@ -591,9 +602,18 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		Log.v(TAG, "onShutterButtonClick");
 		switch(b.getId()){
 			case R.id.shutter_button:
-				registerForContextMenu(mCameraButton); 
-				mCameraButton.showContextMenu();
-			    unregisterForContextMenu(mCameraButton);
+				if(installationVerified){
+					registerForContextMenu(mCameraButton); 
+					mCameraButton.showContextMenu();
+				    unregisterForContextMenu(mCameraButton);
+				} else {
+					// Verify the installation
+					Message msg = Message.obtain(null, OCRService.MSG_INSTALL_CHECK);
+					msg.replyTo = mMessenger;
+					if(!sendMessage(msg)){
+						toastMessage("Could not contact the OCR engine. Please restart the app.");
+					}
+				}
 				break;
 			case R.id.ocr_button:
 				handleOCR();
@@ -609,13 +629,7 @@ public class OCRActivity extends Activity implements OnShutterButtonListener, Ph
 		if(mCameraButton != null){ mCameraButton.rotation = rotation; mCameraButton.invalidate(); }
 		
 		// Get the angle of rotation for the text views
-		int rotationAngle = 90;
-		switch(rotation){
-			case Surface.ROTATION_90:	rotationAngle = 0;		break;
-			case Surface.ROTATION_180:	rotationAngle = 270;	break;
-			case Surface.ROTATION_270:	rotationAngle = 180;	break;
-			case Surface.ROTATION_0:	rotationAngle = 90;		break;
-		}
+		int rotationAngle = getRotationAngleForBitmap(rotation);
 
 		// Update the layout parameters of the Progress bar
 		RotateLayout.LayoutParams x = (RotateLayout.LayoutParams) mProgressLayout.getLayoutParams();

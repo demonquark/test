@@ -42,23 +42,26 @@ public class OCRService extends Service {
     	UNINITIALIZED,
     	INITIALIZING,
     	IDLE,
-    	BUSY,
-    	CONTINUOUS
+    	BUSY
     }
     
 	/** Message ids */
-    static final int MSG_INITIALIZE = 1;		// Initialize the OCR engine (if not already initialized).  
-    static final int MSG_RELEASE = 2;			// Release all the OCR resources. (inverse of initialize)
-    static final int MSG_RECOGNIZE = 3;			// Recognize text from an image.
-    static final int MSG_GETSTATE = 4;			// Get the current state of the service (i.e. what it is doing).
-    static final int MSG_ERROR = 10;
-    static final int MSG_REPLY = 11;
-    static final int MSG_RESULT = 12;
-    static final int MSG_PROGRESS = 13;
+    static final int MSG_INITIALIZE 	= 1;	// Initialize the OCR engine (if not already initialized).  
+    static final int MSG_RELEASE 		= 2;	// Release all the OCR resources. (inverse of initialize)
+    static final int MSG_RECOGNIZE 		= 3;	// Recognize text from an image and return an OcrResult object.
+    static final int MSG_RECOGNIZE_TXT	= 4;	// Recognize text from an image and return a String.
+    static final int MSG_GETSTATE 		= 5;	// Get the current state of the service (i.e. what it is doing).
+    static final int MSG_CANCEL			= 6;	// Cancel all current asyncTasks.
+    static final int MSG_INSTALL_CHECK	= 7;	// Verify that the Tesseract data files are installed
+    
+    static final int MSG_ERROR 			= 10;
+    static final int MSG_REPLY 			= 11;
+    static final int MSG_RESULT 		= 12;
+    static final int MSG_RESULT_TXT 	= 13;
+    static final int MSG_PROGRESS 		= 14;
     
 	static final int NOTIFICATION_ID = 86000;
     
-    static int progCounter = 0;
     static final String TAG = "OCRService";
     
     /** Target we publish to clients. Clients use this messenger to send requests to the Service. */
@@ -73,7 +76,7 @@ public class OCRService extends Service {
     private TessBaseAPI baseApi;
     private State mState;
     private String languageCode = Gegevens.EXTRA_LANGUAGE;
-    private File storageRoot;
+    private OcrInitAsyncTask initTask;
     
     /** Avoid re-initialization of Tesseract due to accidental unbinding-rebinding by delaying release of resources */
     private static Handler handler = new Handler();
@@ -110,32 +113,50 @@ public class OCRService extends Service {
 	    		switch (msg.what) {
                 case MSG_INITIALIZE:
                 	Log.v(TAG, "initialize client request: " + msg.obj.toString());
-                    mService.get().initializeOCR(new WeakReference<Messenger> (msg.replyTo), msg.obj.toString());
+                	if(!isInitialized() || msg.arg1 > 0){
+                        mService.get().initializeOCR(new WeakReference<Messenger> (msg.replyTo), msg.obj.toString());
+                	} else {
+                		mService.get().sendMessage(new WeakReference<Messenger> (msg.replyTo), MSG_REPLY, 
+                				msg.what, mService.get().getString(R.string.error_already_initialized));
+                	}
                     break;
                 case MSG_RELEASE:
                 	Log.v(TAG, "release client request");
                 	mService.get().releaseOCR();	
+                	mService.get().sendMessage(new WeakReference<Messenger> (msg.replyTo), MSG_REPLY, 
+                			msg.what, mService.get().getString(R.string.success_release));
                     break;
                 case MSG_RECOGNIZE:
+                case MSG_RECOGNIZE_TXT:
                 	Log.v(TAG, "recognize client request");
             		mService.get().recognize(new WeakReference<Messenger> (msg.replyTo), 
             				(msg.obj instanceof Bitmap) ? (Bitmap) msg.obj : null);
                     break;
                 case MSG_GETSTATE:
-                	mService.get().sendMessage(new WeakReference<Messenger> (msg.replyTo),
-                			MSG_GETSTATE, mService.get().mState.toString());
+                	Log.v(TAG, "get state client request");
+                	mService.get().sendMessage(new WeakReference<Messenger> (msg.replyTo), MSG_REPLY, 
+                			msg.what, mService.get().mState.toString());
+                	break;
+                case MSG_CANCEL:
+                	Log.v(TAG, "cancel request");
+                	mService.get().cancel();
+                	break;
+                case MSG_INSTALL_CHECK:
+                	Log.v(TAG, "check installation request");
+                	mService.get().checkInstallation(new WeakReference<Messenger> (msg.replyTo));
                 	break;
                 default:
                     super.handleMessage(msg);
 	            }	    		
 	    	} else {
-	    		// The service does not exist
 	            try {
 	            	if(mService.get() != null){
+	            		// It is in an invalid state
 	    	    		Log.e(TAG,"IncomingHandler: Invalid state, namely: " + mService.get().mState + ".");
 	            		msg.replyTo.send(Message.obtain(null, MSG_ERROR, 
 	            				mService.get().getString(R.string.error_invalid_state)));
 	            	} else {
+	    	    		// The service does not exist
 	    	    		Log.e(TAG,"IncomingHandler: Service reference is null.");
 	            		msg.replyTo.send(Message.obtain(null, MSG_ERROR, "Service does not exist."));
 	            	}
@@ -151,11 +172,18 @@ public class OCRService extends Service {
 	    
 	    private boolean inAllowedState(int msg){
 	    	State s = mService.get().mState;
-	    	
-	    	return (msg == MSG_INITIALIZE && s == State.UNINITIALIZED)
-	    		|| (msg == MSG_RELEASE && s != State.INITIALIZING)
-	    		|| (msg == MSG_RECOGNIZE && (s == State.UNINITIALIZED || s == State.INITIALIZING || s == State.IDLE))
-	    		|| (msg == MSG_GETSTATE);
+	    	return (msg == MSG_INITIALIZE)
+	    		|| (msg == MSG_RELEASE 			&& (s != State.INITIALIZING))
+	    		|| (msg == MSG_RECOGNIZE 		&& (s == State.UNINITIALIZED || s == State.IDLE))
+	    		|| (msg == MSG_RECOGNIZE_TXT 	&& (s == State.UNINITIALIZED || s == State.IDLE))
+	    		|| (msg == MSG_GETSTATE)
+	    		|| (msg == MSG_CANCEL)
+	    		|| (msg == MSG_INSTALL_CHECK);
+	    }
+
+	    private boolean isInitialized(){
+	    	State s = mService.get().mState;
+	    	return (s != State.UNINITIALIZED && mService.get().baseApi != null);
 	    }
     }
     
@@ -216,48 +244,58 @@ public class OCRService extends Service {
     		releaseOCR();
     		
     		// Get the StorageRoot
-    		storageRoot = FileManager.getApplicationFileDir(this);
-    		Log.d(TAG, "storage root: " + storageRoot.getAbsolutePath());
+    		File storageRoot = FileManager.getApplicationFileDir(this);
+    		Log.v(TAG, "storage root: " + storageRoot.getAbsolutePath());
     		
     		// Create a new base Api
     		baseApi = new TessBaseAPI();
     		
     		// Assign this client as current client
     		currentClient = client;
+    		Log.v(TAG, "currentClient: " + ((currentClient != null) ? currentClient.get() : "null"));
     		
     		// Assign the language
             languageCode = language;
     		
-    		// Create a separate thread to initialize Tesseract
-    		new OcrInitAsyncTask(this, baseApi, languageCode, storageRoot){
+    		// Clean up any existing initialization threads
+            if(initTask != null){ initTask.cancel(true);  initTask = null; }
+
+            // Create a separate thread to initialize Tesseract
+            initTask = new OcrInitAsyncTask(this, baseApi, languageCode, storageRoot){
     			@Override protected void onCancelled(Boolean result) {
     				onInitAsyncTaskComplete(false);
     			}
     			@Override protected void onPostExecute(Boolean result) {
     				onInitAsyncTaskComplete(result);
     			}
-    		}.execute();
+    		};
+    		
+    		// start the initialization thread
+    		initTask.execute();
+    		
     	} else {
-    		sendMessage(client, MSG_ERROR, getString(R.string.error_invalid_state));
+    		sendMessage(client, MSG_ERROR, currentRequest, getString(R.string.error_invalid_state_initialize));
     	}
     }
 
     public void recognize(WeakReference<Messenger> client, Bitmap image){
     	Log.v(TAG,"recognize: (2) Bitmap is " + image);
     	
+//    	if(currentRequest == MSG_RECOGNIZE_TXT){
+//    		sendMessage(client, MSG_RESULT_TXT, currentRequest, mState.toString() + ": " + System.currentTimeMillis());
+//    	}
+
     	if(image == null){
     		// No image to recognize
-    		sendMessage(client, MSG_ERROR, getString(R.string.error_invalid_file_bmp));
+    		sendMessage(client, MSG_ERROR, currentRequest, getString(R.string.error_invalid_file_bmp));
     	} else if(mState == State.UNINITIALIZED || baseApi == null){
     		// Save the bitmap while initialize the API
     		currentBitmap = image;
 			
-    		// Initialize the API first
+    		// Initialize the API first and reload the bitmap in onInitAsyncTaskComplete()
 	    	initializeOCR(client, languageCode);
-	    	// We'll reload the bitmap in onInitAsyncTaskComplete()
 
     	} else if(mState == State.IDLE && baseApi != null){
-    		
     		// Change the state to busy
     		mState = State.BUSY;
 
@@ -268,7 +306,7 @@ public class OCRService extends Service {
     		currentBitmap = null;
     		
     		// Create separate thread to run the recognition
-    		new OcrRecognizeAsyncTask(baseApi, image){
+    		new OcrRecognizeAsyncTask(baseApi, image, currentRequest == MSG_RECOGNIZE_TXT){
     			@Override protected void onCancelled(OcrResult result) {
     				onRecognizeAsyncTaskComplete(null);
     			}
@@ -276,17 +314,40 @@ public class OCRService extends Service {
     				onRecognizeAsyncTaskComplete(result);
     			}
     		}.execute();
-    	} else if (mState == State.CONTINUOUS){
-    		// TODO: figure out what to do in continuous
     	} else {
-    		sendMessage(client, MSG_ERROR, getString(R.string.error_invalid_state));
+    		sendMessage(client, MSG_ERROR, currentRequest, getString(R.string.error_invalid_state_recognize));
     	}
     }
-    
     public void releaseOCR(){
         // Release the Tesseract resources 
     	if(baseApi != null){ baseApi.end(); baseApi = null; } 
 		mState = State.UNINITIALIZED;
+    }
+    
+    /**
+     * Cancel all ongoing AsyncTasks
+     */
+    public void cancel(){
+    	Log.v(TAG, "Cancel request");
+    	// Cancel the initialization task
+    	if(initTask != null){
+    		Log.i(TAG, "initTask was not null.");
+    		initTask.cancel(true);
+    		initTask = null;
+    	}
+    }
+    
+    public void checkInstallation(WeakReference<Messenger> client){
+    	Log.v(TAG, "check installation.");
+    	File tessDataFolder = new File (FileManager.getApplicationFileDir(this), OcrInitAsyncTask.TESSDATA_FOLDERNAME);
+    	if(OcrInitAsyncTask.verifyInstallation(tessDataFolder, OcrInitAsyncTask.OSD_CODE)
+    			&& OcrInitAsyncTask.verifyInstallation(tessDataFolder, languageCode)){
+        	Log.i(TAG, "check installation success.");
+    		sendMessage(client, MSG_REPLY, currentRequest, getString(R.string.init_verification_success));
+    	} else {
+        	Log.i(TAG, "check installation failed.");
+    		sendMessage(client, MSG_ERROR, currentRequest, getString(R.string.init_verification_failed));
+    	}
     }
     
     @SuppressWarnings("deprecation")
@@ -296,7 +357,7 @@ public class OCRService extends Service {
     	Notification notice = new Notification(R.drawable.ic_action_about, 
     			getString(R.string.notice_ticker), System.currentTimeMillis());
     	notice.setLatestEventInfo(this, getString(R.string.notice_title), getString(R.string.notice_content), 
-    			PendingIntent.getActivity(this, 0, new Intent(this, OCRService.class).
+    			PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class).
     					setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP), 0));
 
     	notice.flags |= Notification.FLAG_NO_CLEAR;
@@ -308,12 +369,22 @@ public class OCRService extends Service {
     private void delayedStopSelf(){
         // Delay stopping the service for 5 seconds
     	handler.removeCallbacks(delayStopSelf);
-    	handler.postDelayed(delayStopSelf, 1000L * 10);
+    	handler.postDelayed(delayStopSelf, 1000L * 5);
     }
 
-    private void sendMessage(WeakReference<Messenger> client, int msgCode, String message){
+    /**
+     * Sends a message to the given client.
+     * The message will contain: what = msgCode, arg1 = requestCode, arg2 = mState, obj = message. 
+     * 
+     * @param client - A weak reference the messenger you want to send the message to 
+     * @param msgCode - what (should be the message code)
+     * @param requestCode - arg1 (should be original request code)
+     * @param message - obj (should be String of the message)
+     */
+    private void sendMessage(WeakReference<Messenger> client, int msgCode, int requestCode, String message){
+    	Log.v(TAG,"sendMessage: The message was: " + message + " (" + msgCode + ")" + " requestCode was " + requestCode);
         try {
-    		client.get().send(Message.obtain(null, msgCode, currentRequest, mState.ordinal(), message));
+    		client.get().send(Message.obtain(null, msgCode, requestCode, mState.ordinal(), message));
         } catch (RemoteException e) {
             // The client is dead. 
     		Log.e(TAG,"sendMessage: The client is dead. Message was: " + message + " (" + msgCode + ")");
@@ -325,15 +396,13 @@ public class OCRService extends Service {
     
     /**
      * A callback for the asynchronous tasks. 
-     * @param what - a message code for a progress update
      * @param message - a String message to send with the progress update
      * @param progress - how far along the asynchronous tasks is (use -1 for indeterminate progress)
      * 
      */
-    protected void onAsyncProgress(int what, String message, int progress){
-    	progCounter++;
-    	String end = " " + ((progress > 0) ? progress + "% " : "") + "(" + progCounter + ")";
-    	sendMessage(currentClient, MSG_PROGRESS, message + end);
+    protected void onAsyncProgress(String message, int progress){
+    	String end = ((progress > 0) ? " " + progress + "% " : "");
+    	sendMessage(currentClient, MSG_PROGRESS, currentRequest, message + end);
     }
     
     
@@ -344,20 +413,26 @@ public class OCRService extends Service {
      */
     private void onInitAsyncTaskComplete(boolean success){
         Log.d(TAG, "onInitAsyncTaskComplete");
-
+        
+        // get rid of the AsyncTask
+        initTask = null;
+        
         if(success && baseApi != null){
             baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK);
             baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
             baseApi.setVariable(TessBaseAPI.VAR_USE_CJK_FP_MODEL, TessBaseAPI.VAR_TRUE);
+            baseApi.setVariable(TessBaseAPI.VAR_EDGES_MAX_CHILD_OUTLINE, String.valueOf(50));
 
     		// If the base API was successfully initialized, put us in the IDLE state (to allow recognition).
-        	sendMessage(currentClient, MSG_REPLY, getString(R.string.success_initialization));
+        	sendMessage(currentClient, MSG_REPLY, currentRequest, getString(R.string.success_initialization));
     		mState = State.IDLE;
 
-    		if(currentRequest == MSG_RECOGNIZE) {
+    		if(currentRequest == MSG_RECOGNIZE || currentRequest == MSG_RECOGNIZE_TXT) {
+    			// Inform the user that we will continue with processing
+    			sendMessage(currentClient, MSG_PROGRESS, currentRequest, getString(R.string.busy_recognizing));
+        		// We still have a recognition pending.
     	    	Log.v(TAG,"recognize: (3) Bitmap is " + currentBitmap);
     	        recognize(currentClient, currentBitmap);
-    			
     		} else {
         		// We're done with the current client. Remove any references to the object.
     	        Log.v(TAG, "onInitAsyncTaskComplete. don't recognize. currentRequest is " + currentRequest);
@@ -366,7 +441,7 @@ public class OCRService extends Service {
         } else {
     		// If the base API was NOT successfully initialized, release the resource.
     		// NOTE: the releaserOCR() method will put us in the UNINITIALIZED state.
-    		sendMessage(currentClient, MSG_ERROR, getString(R.string.error_failed_initialize));
+    		sendMessage(currentClient, MSG_ERROR, currentRequest, getString(R.string.error_failed_initialize));
     		releaseOCR();
 
     		// We're done with the current client. Remove any references to the object.
@@ -385,7 +460,11 @@ public class OCRService extends Service {
         	Log.v(TAG, "Recognize complete (" + result + "): " + result.getText());
 	    	Log.v(TAG,"recognize: (6) Bitmap is " + result.getBitmap());
             try {
-            	currentClient.get().send(Message.obtain(null, MSG_RESULT, currentRequest, mState.ordinal(), result));
+            	if(currentRequest == MSG_RECOGNIZE_TXT){
+            		currentClient.get().send(Message.obtain(null, MSG_RESULT_TXT, currentRequest, mState.ordinal(), result.getText()));	
+            	} else {
+            		currentClient.get().send(Message.obtain(null, MSG_RESULT, currentRequest, mState.ordinal(), result));
+            	}
             } catch (RemoteException e) {
                 // The client is dead. 
         		Log.e(TAG,"sendMessage: The client is dead. Message was: " + result + " (" + MSG_RESULT + ")");
@@ -397,7 +476,7 @@ public class OCRService extends Service {
     	} else {
     		// We did not receive an OCR result
         	Log.i(TAG, "Recognize complete: No result");
-    		sendMessage(currentClient, MSG_ERROR, getString(R.string.error_failed_recognition));
+    		sendMessage(currentClient, MSG_ERROR, currentRequest, getString(R.string.error_failed_recognition));
     	}
 
     	// Go back to IDLE (or if the baseApi no longer exists go to UNINITIALIZED
@@ -406,18 +485,4 @@ public class OCRService extends Service {
     	// We're done with the current client. Remove any references to the object.
         currentClient = null;
     }
-    
-    
-//  private void keepTrack(){
-//		handler.postDelayed(runnable, 1000);
-//	}
-    
-//  private Runnable runnable = new Runnable() {        
-//		@Override public void run() {
-//			long diff = System.currentTimeMillis() - shutdownTime;
-//	    	Log.v(TAG,"keep track: baseAPI is " + ((baseApi == null) ? "null" : "not null") + " | " + progCounter + " | " + diff);
-//	    	keepTrack();
-//		}
-//  };
-
 }

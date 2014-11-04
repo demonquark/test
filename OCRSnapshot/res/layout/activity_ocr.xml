@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".OCRActivity" >
+    tools:context=".MainActivity" >
     
     <!-- Taken picture. Takes up the entire background. -->
 	<com.molatra.ocrtest.views.RotateImageView android:id="@+id/image_view"
@@ -88,7 +88,25 @@
 		        android:paddingLeft="@dimen/text_view_horizontal_padding"
 		        android:autoLink="web"/>
 		    
-		    <TextView android:id="@+id/ocr_result_detail_text_view"
+			<Button android:id="@+id/ocr_result_copy_button" 
+				android:layout_width="wrap_content" 
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_horizontal"
+				android:drawableLeft="@drawable/ic_action_copy"
+				android:drawablePadding="@dimen/button_icon_padding"
+				android:onClick="onBtnClick"
+				android:text="@string/result_copy_btn"/> 
+		    
+			<Button android:id="@+id/ocr_result_detail_button" 
+				android:layout_width="wrap_content" 
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_horizontal"
+				android:drawableLeft="@drawable/ic_action_view_as_list"
+				android:drawablePadding="@dimen/button_icon_padding"
+				android:onClick="onBtnClick"
+				android:text="@string/result_detail_show_btn"/> 
+			
+			<TextView android:id="@+id/ocr_result_detail_text_view"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_gravity="center_horizontal"
@@ -133,6 +151,15 @@
 	        android:text="@string/loremipsum"
 	        android:paddingTop="@dimen/text_view_vertical_padding" />
 		
+	    <Button android:id="@+id/progress_intro_download_btn" 
+			android:layout_width="wrap_content" 
+			android:layout_height="wrap_content"
+			android:layout_gravity="center_horizontal"
+			android:onClick="onBtnClick"
+			android:visibility="gone"
+			android:text="@string/intro_download_btn"/> 
+	    
+	    
 	</LinearLayout>
 	    
 	</com.molatra.ocrtest.views.RotateLayout>

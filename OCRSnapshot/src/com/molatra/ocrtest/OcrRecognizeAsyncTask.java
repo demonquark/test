@@ -41,11 +41,17 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 	private TessBaseAPI baseApi;
 	private Bitmap bitmap;
 	private OcrResult ocrResult;
+	private boolean textOnly;
 
 	OcrRecognizeAsyncTask(TessBaseAPI baseApi, Bitmap bitmap) {
+		this(baseApi, bitmap, false);
+	}
+
+	OcrRecognizeAsyncTask(TessBaseAPI baseApi, Bitmap bitmap, boolean textOnly) {
 		this.baseApi = baseApi;
 		this.bitmap = bitmap;
 		this.ocrResult = null;
+		this.textOnly = textOnly;
 	}
 
 	@Override
@@ -57,7 +63,7 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 		
 		// Let's get started
 		long start = System.currentTimeMillis();
-		String textResult;
+		String textResult = null;
 		ocrResult = null;
 		
 		try {
@@ -72,38 +78,48 @@ class OcrRecognizeAsyncTask extends AsyncTask<Void, Void, OcrResult> {
 			// step 3: Check for failure to recognize text
 			if (textResult != null && !textResult.equals("")) {
 				
-			      // step 4: Get the result iterator
-			      ResultIterator r = baseApi.getResultIterator();
-			      int level = com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
-			      String allResultText = "";
-			      int i = 0;
-			      
-			      r.begin();
-			      do { 
-			    	  i++;
-			    	  // step 5: Get the top choice for this item in the iterator
-					  List<Pair <String, Double>> otherResults = r.getChoicesAndConfidence(level);
-			    	  for (Pair <String, Double> element : otherResults) {
-			    		  allResultText += element.first + " (" + element.second  + "%) ";
-			    	  }
-			    	  
-			    	  // step 6: New line to indicate a new word
-			    	  allResultText += "\n----------------------------------\n"; 
-			    	  
-			      } while(r.next(level) && i < 100);
-
-				// step 7: Save the results to a new ocrResult object
+				// step 4: Create a barebones OCR result
 				ocrResult = new OcrResult();
-				ocrResult.setBitmap(WriteFile.writeBitmap(baseApi.getThresholdedImage()));
-    	    	Log.v(TAG,"recognize: (5) Bitmap is " + bitmap);
 				ocrResult.setText(textResult);
-				ocrResult.longtext = allResultText;
-				ocrResult.setWordConfidences(baseApi.wordConfidences());
-				ocrResult.setMeanConfidence( baseApi.meanConfidence());
-				ocrResult.setWordBoundingBoxes(baseApi.getWords().getBoxRects());
-				ocrResult.setCharacterBoundingBoxes(baseApi.getConnectedComponents().getBoxRects());
-				ocrResult.setRecognitionTimeRequired(System.currentTimeMillis() - start);
-			}
+
+				if(!textOnly){
+					// step 5: Get the result iterator
+				    ResultIterator r = baseApi.getResultIterator();
+				    int level = com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
+				    String allResultText = "";
+				    int i = 0;
+				      
+				    r.begin();
+				    do { 
+						i++;
+						// step 6: Get the top choice for this item in the iterator
+						List<Pair <String, Double>> otherResults = r.getChoicesAndConfidence(level);
+						for (Pair <String, Double> element : otherResults) {
+						allResultText += element.first + " (" + element.second  + "%) ";
+						}
+						
+						// step 7: New line to indicate a new word
+						allResultText += "\n----------------------------------\n"; 
+				    	  
+				    } while(r.next(level) && i < 100);
+	
+					// step 8: Save the results to a new ocrResult object
+					ocrResult.setBitmap(WriteFile.writeBitmap(baseApi.getThresholdedImage()));
+	    	    	Log.v(TAG,"recognize: (5) Bitmap is " + bitmap);
+					ocrResult.setText(textResult);
+					ocrResult.longtext = allResultText;
+					ocrResult.setWordConfidences(baseApi.wordConfidences());
+					ocrResult.setMeanConfidence( baseApi.meanConfidence());
+					ocrResult.setWordBoundingBoxes(baseApi.getWords().getBoxRects());
+					ocrResult.setCharacterBoundingBoxes(baseApi.getConnectedComponents().getBoxRects());
+					ocrResult.setRecognitionTimeRequired(System.currentTimeMillis() - start);
+				}
+			} 
+//			else {
+//				ocrResult = new OcrResult();
+//				ocrResult.setWordBoundingBoxes(baseApi.getRegions().getBoxRects());
+//				ocrResult.setText("d" + String.format("%06d", (System.currentTimeMillis() - start)));
+//			}
 			
 		} catch (RuntimeException e) {
 			

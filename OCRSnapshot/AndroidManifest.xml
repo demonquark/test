@@ -9,6 +9,7 @@
     <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="19" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" /> 
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" />
     
@@ -18,15 +19,23 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
 		<activity
-            android:name="com.molatra.ocrtest.OCRActivity"
+            android:name="com.molatra.ocrtest.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:screenOrientation="landscape"
+            android:launchMode="singleTop"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+		<activity android:name="com.molatra.ocrtest.CaptureActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+			android:windowSoftInputMode="stateAlwaysHidden"
+			android:screenOrientation="landscape"
+            android:launchMode="singleTop" >
+		</activity>
 		<service android:name="com.molatra.ocrtest.OCRService"
 		    android:exported="true">
             <intent-filter>
