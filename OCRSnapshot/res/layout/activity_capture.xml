@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<SurfaceView android:id="@+id/preview_view"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent" />
+
+    <!-- The view finder. -->
+	<com.molatra.ocrtest.views.ResultsOverlayView
+		android:id="@+id/results_overlay_view"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent" />
+	
+	<!-- The results. -->
+	<com.molatra.ocrtest.views.RotateLayout
+	    android:id="@+id/result_rotate"
+		android:layout_alignParentBottom="true"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent" >
+			
+			<TextView android:id="@+id/ocr_result_text_view"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:gravity="center_horizontal"
+		        android:textColor="@color/result_continuous_text"
+		        android:textColorLink="@color/result_continuous_text"
+		        android:textSize="@dimen/ocr_result_text_med"
+		        android:text="@string/unknown"
+		        android:paddingLeft="@dimen/text_view_horizontal_padding"
+		        android:autoLink="web"/>
+
+	</com.molatra.ocrtest.views.RotateLayout>			
+	
+		<!-- The results. -->
+	<com.molatra.ocrtest.views.RotateLayout
+	    android:id="@+id/hint_rotate"
+		android:layout_alignParentBottom="true"
+		android:layout_width="match_parent"
+		android:visibility="gone"
+		android:layout_height="match_parent" >
+			
+			<TextView android:id="@+id/ocr_hint_text_view"
+		        android:layout_width="match_parent"
+		        android:layout_height="match_parent"
+		        android:gravity="bottom|center_horizontal"
+		        android:textColor="@color/grey_transparent"
+		        android:textColorLink="@color/grey_transparent"
+		        android:textSize="@dimen/ocr_result_text_small"
+		        android:text="@string/hint_stop_recognition"
+		        android:paddingLeft="@dimen/text_view_horizontal_padding"
+		        android:autoLink="web"/>
+
+	</com.molatra.ocrtest.views.RotateLayout>			
+	
+	
+    <!-- The view finder. -->
+	<com.molatra.ocrtest.views.ViewfinderView
+		android:id="@+id/viewfinder_view"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:background="#0000"/>
+	
+    <!-- The OCR button. -->
+	<com.molatra.ocrtest.views.ShutterButton
+	    android:id="@+id/ocr_button"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:background="@drawable/ocr_button"
+		android:clickable="true"
+		android:focusable="false"
+		android:layout_alignParentTop="true"
+		android:layout_alignParentRight="true"
+		android:gravity="center_vertical"
+		android:layout_marginRight="@dimen/button_horizontal_margin"
+		android:layout_marginTop="@dimen/button_vertical_margin"
+		android:scaleType="center" /> 
+		
+    <ProgressBar
+	    android:id="@+id/progress_bar"
+	    style="?android:attr/progressBarStyleLarge"
+	    android:layout_centerInParent="true"
+	    android:visibility="gone"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"/>
+	
+
+</RelativeLayout>
